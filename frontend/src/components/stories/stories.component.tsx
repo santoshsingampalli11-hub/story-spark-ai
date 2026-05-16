@@ -27,6 +27,9 @@ const StoriesComponent = () => {
   const [generateFreeModel] = useGenerateFreeModelMutation();
   const [selectedPrompt, setSelectedPrompt] = useState<string>("");
   const [textareaValue, setTextareaValue] = useState<string>("");
+  const [guestRequestCount, setGuestRequestCount] = useState<number>(() =>
+    parseInt(localStorage.getItem("guestRequestCount") || "0", 10)
+  );
 
   useEffect(() => {
     setValue("prompt", textareaValue);
@@ -55,6 +58,11 @@ const StoriesComponent = () => {
         setTextareaValue("");
         setValue("prompt", "");
         reset();
+        if (!login) {
+          const newCount = guestRequestCount + 1;
+          setGuestRequestCount(newCount);
+          localStorage.setItem("guestRequestCount", String(newCount));
+        }
       }
     } catch (error: unknown) {
       toast.error(getErrorMessage(error));
@@ -72,12 +80,25 @@ const StoriesComponent = () => {
   return (
     <div className="bg-gradient-to-br animate-gradient-slow min-h-screen">
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="py-6 flex justify-between items-start">
+        <div className="py-6 flex justify-between">
           <Link to="/">
             <div className="!rounded-button bg-gradient-to-r from-white/20 to-white/10 hover:from-white/30 hover:to-white/20 text-gray-300 px-3 py-2 flex items-center gap-2 transition-all duration-300 rounded">
               <i className="fa-solid fa-left-long"></i> BACK
             </div>
           </Link>
+          {!login && (
+            <div className="!rounded-button bg-gradient-to-r from-white/20 to-white/10 text-gray-400 px-3 py-2 flex items-center gap-2 transition-all duration-300 rounded text-sm">
+              Free access for 3 requests —{" "}
+              <Link to="/login">
+                {""}
+                <span className="text-indigo-400 underline font-semibold">
+                  Login
+                </span>{" "}
+              </Link>
+              {""}
+              for more!
+            </div>
+          )}
           <div className="">
             <button className="mt-1 !rounded-button bg-gradient-to-r from-white/20 to-white/10 hover:from-white/30 hover:to-white/20 text-gray-300 px-3 py-2 flex items-center gap-2 transition-all duration-300 rounded">
               <span>
@@ -93,31 +114,15 @@ const StoriesComponent = () => {
               <i className="fas fa-bolt text-yellow-400"></i>
             </button>
             <div className="mt-3 text-gray-500 text-xs">
-              <span>This month request: {data?.requestsThisMonth ?? 0}</span>
+              <span>This month request: {login ? (data?.requestsThisMonth ?? 0) : guestRequestCount}</span>
               <br />
-              <span>Total posts: {data?.postsCount ?? 0}</span>
+              <span>Total posts: {login ? (data?.postsCount ?? 0) : 0}</span>
             </div>
           </div>
         </div>
 
-        {!login && (
-          <div className="flex justify-center mb-4">
-            <div className="!rounded-button bg-gradient-to-r from-white/20 to-white/10 text-gray-400 px-3 py-2 flex items-center gap-1 transition-all duration-300 rounded text-sm">
-              Free access for 3 requests —{" "}
-              <Link to="/login">
-                {""}
-                <span className="text-indigo-400 underline font-semibold">
-                  Login
-                </span>{" "}
-              </Link>
-              {""}
-              for more!
-            </div>
-          </div>
-        )}
-
-        <div className="mt-2 sm:mt-4">
-         <h1 className="text-gray-300 text-4xl font-extrabold text-center mb-4 leading-snug drop-shadow-lg tracking-wide">
+        <div className="mt-11">
+          <h1 className="text-gray-300 text-4xl font-extrabold text-center mb-12 leading-snug drop-shadow-lg tracking-wide">
             ✨ Enter Prompt –{" "}
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-blue-400">
               Generate Story Today!
@@ -131,8 +136,7 @@ const StoriesComponent = () => {
                 <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
                   <textarea
                     {...register("prompt")}
-                    aria-label="Story prompt input"
-                    className="w-full h-40 resize-none border-none outline-none bg-transparent text-gray-300 focus:ring-2 focus:ring-blue-500 text-lg leading-relaxed tracking-wide placeholder:italic placeholder:text-gray-500"
+                    className="w-full h-40 resize-none border-none outline-none bg-transparent text-gray-300 focus:ring-0 text-lg leading-relaxed tracking-wide placeholder:italic placeholder:text-gray-500"
                     placeholder="Every great story begins with a single idea. What’s yours?"
                     value={textareaValue}
                     onChange={(e) => setTextareaValue(e.target.value)}
@@ -140,7 +144,6 @@ const StoriesComponent = () => {
                   <div className="absolute bottom-3 right-3 flex items-center space-x-2">
                     <button
                       type="submit"
-                        aria-label="Generate story"
                       disabled={loading}
                       className={`rounded-lg bg-gradient-to-r from-blue-400 to-indigo-500 text-gray-200 px-6 py-3 font-semibold ${
                         loading
@@ -164,7 +167,6 @@ const StoriesComponent = () => {
                   className="w-full p-2 bg-slate-800 text-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none text-sm"
                   value={selectedPrompt}
                   onChange={handlePromptSelect}
-                  aria-label="Select an example prompt"
                 >
                   <option value="" disabled>
                     Select a prompt
