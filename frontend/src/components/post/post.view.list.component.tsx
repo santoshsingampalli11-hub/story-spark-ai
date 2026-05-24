@@ -13,6 +13,24 @@ const ExploreViewListComponent: React.FC<IExploreViewListComponentProps> = ({
   isLoading,
 }) => {
   const navigate = useNavigate();
+  const getAuthorInitials = (name?: string) => {
+    if (!name) return "?";
+    const parts = name.trim().split(/\s+/).slice(0, 2);
+    return parts
+      .map((part) => part.charAt(0).toUpperCase())
+      .join("")
+      .slice(0, 2);
+  };
+  const formatDate = (value?: string) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    });
+  };
 
   if (isLoading) {
     return <LoadingAnimation />;
@@ -52,8 +70,23 @@ const ExploreViewListComponent: React.FC<IExploreViewListComponentProps> = ({
                 </p>
 
                 <div className="flex items-center justify-between text-sm text-slate-500 border-t border-slate-700/50 pt-4 mt-auto">
-                  <div className="flex items-center gap-4">
-                    <span>Author</span>
+                  <div className="flex items-start gap-3">
+                    <div className="h-9 w-9 rounded-full bg-slate-900/70 border border-slate-700 text-slate-200 flex items-center justify-center text-xs font-semibold">
+                      {getAuthorInitials(story.author?.name)}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-slate-200 text-sm font-semibold leading-tight">
+                        {story.author?.name || "Unknown author"}
+                      </span>
+                      <span className="text-slate-400 text-xs leading-tight">
+                        {formatDate(story.publishedAt || story.createdAt)}
+                      </span>
+                      {story.author?.profile?.bio ? (
+                        <span className="text-slate-400 text-xs leading-relaxed line-clamp-2 mt-1">
+                          {story.author.profile.bio}
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </div>

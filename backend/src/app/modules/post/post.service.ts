@@ -96,7 +96,7 @@ const getPosts = async (
     .sort(sortCondition)
     .skip(skip)
     .limit(limit)
-    .populate("author", "name email createdAt")
+    .populate("author", "name email createdAt profile.bio")
     .populate({
       path: "reactions",
       populate: { path: "userId", select: "email" },
@@ -118,7 +118,7 @@ const getLatestPosts = async () => {
     const res = await Post.find()
       .sort({ createdAt: -1 })
       .limit(2)
-      .populate("author", "name email createdAt")
+      .populate("author", "name email createdAt profile.bio")
       .populate({
         path: "reactions",
         populate: { path: "userId", select: "email" },
@@ -138,7 +138,7 @@ const getFeaturedPosts = async () => {
     const res = await Post.find({ isFeaturedPost: true })
       .sort({ createdAt: -1, updatedBy: -1 })
       .limit(2)
-      .populate("author", "name email createdAt")
+      .populate("author", "name email createdAt profile.bio")
       .populate({
         path: "reactions",
         populate: { path: "userId", select: "email" },
@@ -171,7 +171,7 @@ const doFeaturedPosts = async (postId: string) => {
 
 const getSinglePost = async (id: string) => {
   const postById = await Post.findOne({ _id: id })
-    .populate("author", "name email createdAt")
+    .populate("author", "name email createdAt profile.bio")
     .populate({
       path: "reactions",
       populate: { path: "userId", select: "email" },
@@ -190,7 +190,7 @@ const getPostsByTag = async (tag: string, excludeId?: string) => {
   }
   const result = await Post.find(query)
     .limit(2)
-    .populate("author", "name email createdAt")
+    .populate("author", "name email createdAt profile.bio")
     .populate({
       path: "reactions",
       populate: { path: "userId", select: "email" },
