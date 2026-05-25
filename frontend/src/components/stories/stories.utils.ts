@@ -35,31 +35,23 @@ export const doPublishAccessibility = (subscriptionType: string) => {
   }
 };
 
-export interface ITopicData {
-  title: string;
-  color: string;
-  selected: boolean;
-}
+export const SELECTED_TOPIC_CLASSES = "bg-indigo-100 text-indigo-800";
+export const UNSELECTED_TOPIC_CLASSES = "bg-slate-700 text-slate-300";
 
 export interface ITopicData {
   title: string;
-  // REMOVED: color: string;
-  selected: boolean;
-}
-
-export interface ITopicData {
-  title: string;
+  className: string;
   selected: boolean;
 }
 
 export const topicsData: ITopicData[] = [
-  { title: "#AIWriting", selected: true },
-  { title: "#StoryGeneration", selected: true },
-  { title: "#Writing", selected: false },
-  { title: "#Creativity", selected: false },
-  { title: "#DigitalMarketing", selected: false },
-  { title: "#Storytelling", selected: false },
-  { title: "#Productivity", selected: false },
+  { title: "#AIWriting", className: SELECTED_TOPIC_CLASSES, selected: true },
+  { title: "#StoryGeneration", className: SELECTED_TOPIC_CLASSES, selected: true },
+  { title: "#Writing", className: UNSELECTED_TOPIC_CLASSES, selected: false },
+  { title: "#Creativity", className: UNSELECTED_TOPIC_CLASSES, selected: false },
+  { title: "#DigitalMarketing", className: UNSELECTED_TOPIC_CLASSES, selected: false },
+  { title: "#Storytelling", className: UNSELECTED_TOPIC_CLASSES, selected: false },
+  { title: "#Productivity", className: UNSELECTED_TOPIC_CLASSES, selected: false },
 ];
 
 export const getWordCount = (str: string) => {

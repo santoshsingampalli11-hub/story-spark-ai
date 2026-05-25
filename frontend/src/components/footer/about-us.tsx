@@ -54,204 +54,105 @@ const features = [
 
 const AboutUs = () => {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-black text-white">
-      {/* Background Effects */}
-      <div className="absolute top-0 left-0 w-72 h-72 bg-blue-500/20 blur-[120px]" />
-      <div className="absolute bottom-0 right-0 w-72 h-72 bg-cyan-500/20 blur-[120px]" />
+    <div className="min-h-screen bg-black text-white px-4 sm:px-6 py-10 flex items-center">
+      <div className="max-w-4xl mx-auto w-full text-center">
+        {/* Logo */}
+        <img
+          src={logo}
+          alt="StorySparkAI"
+          className="h-16 sm:h-20 mx-auto mb-5 transition-transform duration-300 hover:scale-105"
+        />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-20">
-        {/* Hero Section */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeUp}
-          className="text-center"
-        >
-          <motion.img
-            src={logo}
-            alt="StorySparkAI"
-            className="h-20 sm:h-24 mx-auto mb-6"
-            whileHover={{ scale: 1.08, rotate: 2 }}
-            transition={{ type: "spring", stiffness: 200 }}
-          />
+        {/* Heading */}
+        <h1 className="text-3xl sm:text-5xl font-extrabold mb-4 tracking-tight">
+          About <span className="text-blue-500">StorySparkAI</span>
+        </h1>
 
-          <h1 className="text-4xl sm:text-6xl font-extrabold leading-tight">
-            About{" "}
-            <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-              StorySparkAI
-            </span>
-          </h1>
+        {/* Description */}
+        <p className="text-gray-300 text-base sm:text-lg leading-7 sm:leading-8 max-w-2xl mx-auto">
+          StorySparkAI is an open-source platform that helps users generate,
+          explore, and enhance AI-powered stories from a single creative prompt.
+        </p>
 
-          <p className="mt-6 max-w-3xl mx-auto text-gray-400 text-lg leading-8">
-            StorySparkAI is an open-source platform designed for creative minds
-            to generate and share multiple story variations from a single
-            prompt.
+        {/* Mission & Vision Card */}
+        <div className="mt-8 bg-zinc-900/80 border border-zinc-800 shadow-2xl rounded-3xl p-6 sm:p-8 backdrop-blur-sm transition-all duration-300 hover:border-blue-500/40 text-left">
+          <h2 className="text-2xl font-semibold mb-3 text-blue-400">
+            Our Mission & Vision
+          </h2>
+          <p className="text-gray-300 text-base leading-relaxed mb-6">
+            We believe that storytelling is a fundamental part of the human experience. Our mission is to empower writers of all levels by providing intuitive, AI-driven tools that spark creativity, overcome writer's block, and help bring unique narratives to life.
           </p>
 
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <Link
-              to="/"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-blue-500 hover:bg-blue-600 transition-all duration-300 font-semibold shadow-lg hover:shadow-blue-500/40"
-            >
-              <ArrowLeft size={18} />
-              Back to Home
-            </Link>
+          <h2 className="text-2xl font-semibold mb-3 text-blue-400">
+            Why StorySparkAI?
+          </h2>
+          <p className="text-gray-300 text-base leading-relaxed">
+            Writing shouldn't be a solitary struggle. StorySparkAI bridges the gap between imagination and execution. We offer an environment where both beginners and seasoned writers can experiment, learn, and craft compelling stories effortlessly.
+          </p>
+        </div>
 
-            <a
-              href="https://github.com/"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-zinc-700 hover:border-blue-500 transition-all duration-300 font-semibold bg-zinc-900/70"
-            >
-              <Github size={18} />
-              View on GitHub
-            </a>
-          </div>
-        </motion.div>
+        {/* Features Card */}
+        <div className="mt-8 bg-zinc-900/80 border border-zinc-800 shadow-2xl rounded-3xl p-6 sm:p-8 backdrop-blur-sm transition-all duration-300 hover:border-blue-500/40">
+          <h2 className="text-2xl font-semibold mb-5 text-blue-400">
+            Features
+          </h2>
 
-        {/* Mission Section */}
-        <motion.section
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          custom={0.2}
-          className="mt-28 grid md:grid-cols-2 gap-10 items-center"
-        >
-          <div>
-            <span className="text-blue-400 uppercase tracking-widest text-sm">
-              Our Mission
-            </span>
+          <ul className="grid grid-cols-1 justify-items-start sm:grid-cols-2 gap-4 text-gray-300 text-left max-w-xl mx-auto">
+            <li className="flex items-center gap-3">
+              <span className="text-blue-400 text-xl">✨</span>
+              AI Story Generation
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="text-blue-400 text-xl">📚</span>
+              Multiple Story Variations
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="text-blue-400 text-xl">📖</span>
+              Writing Resources
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="text-blue-400 text-xl">🤖</span>
+              AI Writing Assistance
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="text-blue-400 text-xl">💾</span>
+              Save & Explore Stories
+            </li>
+            <li className="flex items-center gap-3">
+              <span className="text-blue-400 text-xl">🎓</span>
+              Creative Learning Support
+            </li>
+          </ul>
+        </div>
 
-            <h2 className="text-3xl sm:text-4xl font-bold mt-3 mb-6">
-              Empowering Creativity Through AI
-            </h2>
+        {/* Community & Open Source Card */}
+        <div className="mt-8 bg-zinc-900/80 border border-zinc-800 shadow-2xl rounded-3xl p-6 sm:p-8 backdrop-blur-sm transition-all duration-300 hover:border-blue-500/40 text-left">
+          <h2 className="text-2xl font-semibold mb-3 text-blue-400">
+            Community & Open Source
+          </h2>
+          <p className="text-gray-300 text-base leading-relaxed">
+            StorySparkAI thrives on collaboration. As an open-source platform, we invite developers, writers, and enthusiasts to contribute, share ideas, and help build a stronger community. Together, we can shape the future of AI-assisted creativity.
+          </p>
+        </div>
 
-            <p className="text-gray-400 text-lg leading-8">
-              StorySparkAI was built to help creators unlock their imagination
-              effortlessly. We aim to provide writers and storytellers with an
-              intuitive AI-powered environment where ideas can evolve into
-              endless creative possibilities.
-            </p>
-          </div>
-
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            className="bg-zinc-900/80 border border-zinc-800 rounded-3xl p-8 shadow-2xl backdrop-blur-sm"
+        {/* CTA */}
+        <div className="mt-8">
+          <Link
+            to="/"
+            className="
+                            inline-flex items-center gap-2
+                            px-6 py-3
+                            bg-blue-500 hover:bg-blue-600
+                            text-white font-semibold
+                            rounded-full
+                            shadow-lg hover:shadow-blue-500/30
+                            transition-all duration-300
+                            hover:scale-105
+                        "
           >
-            <Rocket className="text-blue-400 mb-5" size={42} />
-
-            <h3 className="text-2xl font-semibold mb-4">
-              What Makes StorySparkAI Unique?
-            </h3>
-
-            <ul className="space-y-4 text-gray-400">
-              <li>✨ Generate multiple stories instantly</li>
-              <li>🤖 AI-powered storytelling assistance</li>
-              <li>📚 Explore endless creative possibilities</li>
-              <li>🌍 Open-source and community-driven</li>
-            </ul>
-          </motion.div>
-        </motion.section>
-
-        {/* Features Section */}
-        <motion.section
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          custom={0.4}
-          className="mt-28"
-        >
-          <div className="text-center mb-14">
-            <span className="text-blue-400 uppercase tracking-widest text-sm">
-              Features
-            </span>
-
-            <h2 className="text-3xl sm:text-5xl font-bold mt-3">
-              Everything You Need for Creative Storytelling
-            </h2>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-6">
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                whileHover={{ y: -8, scale: 1.02 }}
-                transition={{ duration: 0.3 }}
-                className="group bg-zinc-900/70 border border-zinc-800 rounded-3xl p-7 hover:border-blue-500/50 hover:shadow-blue-500/10 hover:shadow-2xl transition-all duration-300"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 mb-5 group-hover:scale-110 transition-transform duration-300">
-                  {feature.icon}
-                </div>
-
-                <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
-
-                <p className="text-gray-400 leading-7">{feature.description}</p>
-              </motion.div>
-            ))}
-          </div>
-        </motion.section>
-
-        {/* Vision Section */}
-        <motion.section
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          custom={0.6}
-          className="mt-28"
-        >
-          <div className="bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 rounded-[32px] p-10 shadow-2xl text-center">
-            <Wand2 size={50} className="mx-auto text-blue-400 mb-6" />
-
-            <h2 className="text-3xl sm:text-4xl font-bold mb-5">Our Vision</h2>
-
-            <p className="max-w-3xl mx-auto text-gray-400 text-lg leading-8">
-              We envision a world where storytelling becomes more accessible,
-              collaborative, and limitless with AI. StorySparkAI aims to bridge
-              creativity and technology, helping anyone transform simple ideas
-              into compelling narratives.
-            </p>
-          </div>
-        </motion.section>
-
-        {/* Open Source Section */}
-        <motion.section
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          custom={0.8}
-          className="mt-28"
-        >
-          <div className="relative overflow-hidden rounded-[32px] border border-zinc-800 bg-gradient-to-r from-blue-500/10 via-zinc-900 to-cyan-500/10 p-10 text-center shadow-2xl">
-            <div className="absolute inset-0 backdrop-blur-sm" />
-
-            <div className="relative z-10">
-              <h2 className="text-3xl sm:text-4xl font-bold mb-5">
-                Open Source & Community Driven
-              </h2>
-
-              <p className="max-w-3xl mx-auto text-gray-400 text-lg leading-8">
-                StorySparkAI thrives through collaboration. Developers, writers,
-                designers, and AI enthusiasts are welcome to contribute ideas,
-                improvements, and innovations to help build the future of
-                AI-powered storytelling.
-              </p>
-
-              <a
-                href="https://github.com/"
-                target="_blank"
-                rel="noreferrer"
-                className="mt-8 inline-flex items-center gap-2 bg-white text-black px-6 py-3 rounded-full font-semibold hover:bg-gray-200 transition-all"
-              >
-                <Github size={18} />
-                Contribute on GitHub
-              </a>
-            </div>
-          </div>
-        </motion.section>
+            ⬅ Back to Home
+          </Link>
+        </div>
       </div>
     </div>
   );

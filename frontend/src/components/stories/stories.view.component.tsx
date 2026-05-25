@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getShortenedText, ITopicData, topicsData, getWordCount } from "./stories.utils";
+import { getShortenedText, ITopicData, topicsData, getWordCount, SELECTED_TOPIC_CLASSES } from "./stories.utils";
 import toast, { Toaster } from "react-hot-toast";
 import { useCreatePostMutation } from "../../redux/apis/post.api";
 import jsPDF from "jspdf";
@@ -107,7 +107,7 @@ useEffect(() => {
       ...currentTopics,
       {
         title: normalizedTitle,
-        color: "bg-indigo-100 text-indigo-800",
+        className: SELECTED_TOPIC_CLASSES,
         selected: true,
       },
     ]);
@@ -521,7 +521,7 @@ useEffect(() => {
                     {topics.map((topic, index) => (
                       <span
                         key={index}
-                        className={`inline-flex items-center gap-2 px-4 py-1.5 ${topic.color} rounded-full text-sm font-medium transition-transform hover:scale-105 shadow-sm`}
+                        className={`inline-flex items-center gap-2 px-4 py-1.5 ${topic.className} rounded-full text-sm font-medium transition-transform hover:scale-105 shadow-sm`}
                       >
                         <button
                           type="button"
