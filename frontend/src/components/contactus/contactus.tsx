@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import emailjs from "@emailjs/browser";
+import { instance as axios } from "../../helpers/axios/axionInstance";
+import { getBaseUrl } from "../../helpers/config";
 
 type FormData = {
   fullname: string;
@@ -17,10 +18,6 @@ const INITIAL_FORM_DATA: FormData = {
   subject: "",
   message: "",
 };
-
-const SERVICE_KEY = import.meta.env.VITE_SERVICE_KEY ?? "";
-const TEMPLATE_KEY = import.meta.env.VITE_TEMPLATE_KEY ?? "";
-const PUBLIC_KEY = import.meta.env.VITE_PUBLIC_KEY ?? "";
 
 export default function Contact() {
   const [formData, setFormData] = useState<FormData>(INITIAL_FORM_DATA);
@@ -84,45 +81,27 @@ export default function Contact() {
 
       if (!validateForm()) return;
 
-      // 3. Graceful env var handling for dev/demo
-      if (!SERVICE_KEY || !TEMPLATE_KEY || !PUBLIC_KEY) {
-        if (import.meta.env.DEV) {
-          setLoading(true);
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          setSuccess(true);
-          setFormData(INITIAL_FORM_DATA);
-          return;
-        }
-        setError("Email service is currently unavailable. Please try again later.");
-        return;
-      }
-
       setLoading(true);
 
-      const response = await emailjs.send(
-        SERVICE_KEY,
-        TEMPLATE_KEY,
-        {
-          fullname: formData.fullname.trim(),
-          email: formData.email.trim(),
-          subject: formData.subject.trim(),
-          message: formData.message.trim(),
-        },
-        PUBLIC_KEY,
-      );
+      const response = await axios.post(`${getBaseUrl()}/contact`, {
+        fullname: formData.fullname.trim(),
+        email: formData.email.trim(),
+        subject: formData.subject.trim(),
+        message: formData.message.trim(),
+      });
 
-      // 4. Improved response validation
-      if (response && (response.status === 200 || response.text === "OK")) {
+      // 3. Backend response validation
+      if (response && response.data?.success) {
         setSuccess(true);
         setFormData(INITIAL_FORM_DATA);
       } else {
         setError("✕ Failed to send message. Please try again.");
       }
-    } catch (err: unknown) {
-      console.error("EmailJS Error:", err);
-      setError("✕ Failed to send message. Please check your connection.");
+    } catch (err: any) {
+      console.error("Contact Form Error:", err);
+      setError(err.message || "✕ Failed to send message. Please check your connection.");
     } finally {
-      // 5. Release BOTH the lock and the loading state in all scenarios
+      // 4. Release BOTH the lock and the loading state in all scenarios
       setLoading(false);
       isSubmittingRef.current = false;
     }
