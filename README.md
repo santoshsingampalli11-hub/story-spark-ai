@@ -18,6 +18,9 @@
    <a href="https://github.com/ronisarkarexe/story-spark-ai/pulls" target="blank">
    <img src="https://img.shields.io/github/issues-pr/ronisarkarexe/story-spark-ai.svg?style=for-the-badge&logo=appveyor" alt="Click Vote Open Pull Request"/>
    </a>
+   <a href="https://github.com/ronisarkarexe/story-spark-ai" target="blank">
+   <img src="https://komarev.com/ghpvc/?username=ronisarkarexe&repo=story-spark-ai&style=for-the-badge&color=blue" alt="Repository Views"/>
+   </a>
 </p>
 
 ## Table of Contents
