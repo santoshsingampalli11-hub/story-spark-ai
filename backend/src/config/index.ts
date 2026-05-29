@@ -44,6 +44,6 @@ export default {
   google_client_id: process.env.GOOGLE_CLIENT_ID,
   github: {
     token: process.env.GITHUB_TOKEN,
-    repo: process.env.GITHUB_REPO || "Arpita2919/story-spark-ai",
+    repo: process.env.GITHUB_REPO || "ronisarkarexe/story-spark-ai",
   },
 };
