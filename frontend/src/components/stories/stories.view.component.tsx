@@ -931,6 +931,13 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
           onClose={() => setShowRemix(false)}
         />
       )}
+      {showTranslator && selectedStory && (
+        <StoryTranslator
+          story={selectedStory}
+          isLogin={isLogin}
+          onClose={() => setShowTranslator(false)}
+        />
+      )}
       {showWorldMap && selectedStory && (
         <StoryWorldMap story={selectedStory.content} title={selectedStory.title} onClose={() => setShowWorldMap(false)} />
       )}
