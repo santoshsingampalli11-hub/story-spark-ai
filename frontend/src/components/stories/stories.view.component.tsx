@@ -15,26 +15,55 @@ import { useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setStory } from "../../redux/slices/storySlice";
 import ContinueStoryButton from "../story/ContinueStoryButton";
+import { ErrorToast } from "../ErrorToast";
+import { useApiError } from "../../hooks/useApiError";
 import {
   useGenerateAlternateEndingsMutation,
   useGenerateFreeAlternateEndingsMutation,
 } from "../../redux/apis/ai.model.api";
 
-// ─── StoryCoverImage ────────────────────────────────────────────────────────
+// ─── Custom API Error Handlers ──────────────────────────────────────────────
+
+export class ApiError extends Error {
+  constructor(public readonly status: number, message: string) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    if (error.status === 429) {
+      return "The AI service is currently busy. Please wait a moment and try again.";
+    }
+    if ([502, 503, 504].includes(error.status)) {
+      return "The server took too long to respond. Please try again shortly.";
+    }
+    if (error.status >= 500) {
+      return "A server error occurred. Please try again later.";
+    }
+  }
+  if (error instanceof TypeError) {
+    return "Could not reach the server. Please check your connection and try again.";
+  }
+  return "An unexpected error occurred. Please try again.";
+}
+
+// ─── StoryCoverImage Component ──────────────────────────────────────────────
 
 const GENRE_THEMES: Record<string, { gradient: string; accent: string; icon: string }> = {
-  fantasy:    { gradient: "135deg, #667eea 0%, #764ba2 50%, #f093fb 100%", accent: "#c084fc", icon: "✦" },
-  romance:    { gradient: "135deg, #f857a6 0%, #ff5858 50%, #ffb347 100%", accent: "#fb7185", icon: "♡" },
-  horror:     { gradient: "135deg, #0f0c29 0%, #302b63 50%, #24243e 100%", accent: "#a855f7", icon: "☽" },
-  thriller:   { gradient: "135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%", accent: "#38bdf8", icon: "◈" },
-  mystery:    { gradient: "135deg, #2c3e50 0%, #3498db 50%, #2980b9 100%", accent: "#60a5fa", icon: "◎" },
-  adventure:  { gradient: "135deg, #f7971e 0%, #ffd200 50%, #21d4fd 100%", accent: "#fbbf24", icon: "⊕" },
-  scifi:      { gradient: "135deg, #0f2027 0%, #203a43 50%, #2c5364 100%", accent: "#22d3ee", icon: "◇" },
-  "sci-fi":   { gradient: "135deg, #0f2027 0%, #203a43 50%, #2c5364 100%", accent: "#22d3ee", icon: "◇" },
-  comedy:     { gradient: "135deg, #fddb92 0%, #d1fdff 50%, #f5af19 100%", accent: "#f59e0b", icon: "◉" },
-  drama:      { gradient: "135deg, #8e2de2 0%, #4a00e0 50%, #3b82f6 100%", accent: "#a78bfa", icon: "✧" },
+  fantasy:     { gradient: "135deg, #667eea 0%, #764ba2 50%, #f093fb 100%", accent: "#c084fc", icon: "✦" },
+  romance:     { gradient: "135deg, #f857a6 0%, #ff5858 50%, #ffb347 100%", accent: "#fb7185", icon: "♡" },
+  horror:      { gradient: "135deg, #0f0c29 0%, #302b63 50%, #24243e 100%", accent: "#a855f7", icon: "☽" },
+  thriller:    { gradient: "135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%", accent: "#38bdf8", icon: "◈" },
+  mystery:     { gradient: "135deg, #2c3e50 0%, #3498db 50%, #2980b9 100%", accent: "#60a5fa", icon: "◎" },
+  adventure:   { gradient: "135deg, #f7971e 0%, #ffd200 50%, #21d4fd 100%", accent: "#fbbf24", icon: "⊕" },
+  scifi:       { gradient: "135deg, #0f2027 0%, #203a43 50%, #2c5364 100%", accent: "#22d3ee", icon: "◇" },
+  "sci-fi":    { gradient: "135deg, #0f2027 0%, #203a43 50%, #2c5364 100%", accent: "#22d3ee", icon: "◇" },
+  comedy:      { gradient: "135deg, #fddb92 0%, #d1fdff 50%, #f5af19 100%", accent: "#f59e0b", icon: "◉" },
+  drama:       { gradient: "135deg, #8e2de2 0%, #4a00e0 50%, #3b82f6 100%", accent: "#a78bfa", icon: "✧" },
   historical: { gradient: "135deg, #b79891 0%, #94716b 50%, #6b4226 100%", accent: "#d4a574", icon: "⬡" },
-  default:    { gradient: "135deg, #667eea 0%, #764ba2 50%, #4facfe 100%", accent: "#a78bfa", icon: "✦" },
+  default:     { gradient: "135deg, #667eea 0%, #764ba2 50%, #4facfe 100%", accent: "#a78bfa", icon: "✦" },
 };
 
 function getGenreTheme(tag?: string) {
@@ -107,7 +136,6 @@ const StoryCoverImage: React.FC<StoryCoverImageProps> = ({
         ...style,
       }}
     >
-      {/* Decorative orbs */}
       <div style={{
         position: "absolute", top: "-30%", right: "-15%",
         width: "60%", height: "120%",
@@ -123,7 +151,6 @@ const StoryCoverImage: React.FC<StoryCoverImageProps> = ({
         pointerEvents: "none",
       }} />
 
-      {/* Accent glyph */}
       <div style={{
         position: "absolute", top: "12px", right: "16px",
         fontSize: "3.5rem",
@@ -137,7 +164,6 @@ const StoryCoverImage: React.FC<StoryCoverImageProps> = ({
         {theme.icon}
       </div>
 
-      {/* Genre pill */}
       <div style={{
         position: "absolute", top: "14px", left: "14px",
         background: "rgba(0,0,0,0.28)",
@@ -155,7 +181,6 @@ const StoryCoverImage: React.FC<StoryCoverImageProps> = ({
         {tag}
       </div>
 
-      {/* Large faded initials centred */}
       <div style={{
         position: "absolute", inset: 0,
         display: "flex", alignItems: "center", justifyContent: "center",
@@ -168,12 +193,11 @@ const StoryCoverImage: React.FC<StoryCoverImageProps> = ({
           lineHeight: 1,
           userSelect: "none",
           pointerEvents: "none",
-        }}>
+         }}>
           {initials}
         </div>
       </div>
 
-      {/* Title at bottom */}
       <div style={{
         position: "absolute", bottom: 0, left: 0, right: 0,
         background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%)",
@@ -198,7 +222,7 @@ const StoryCoverImage: React.FC<StoryCoverImageProps> = ({
   );
 };
 
-// ─── Main Component ─────────────────────────────────────────────────────────
+// ─── Component Type Definitions ─────────────────────────────────────────────
 
 export interface IStories {
   uuid: string;
@@ -249,7 +273,9 @@ const buildSentenceSegments = (content: string): StorySentenceSegment[] => {
   return segments;
 };
 
-const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
+// ─── Main View Component ────────────────────────────────────────────────────
+
+export const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
   stories,
   isLogin,
   setStories,
@@ -260,6 +286,8 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
   const audioPlayerRef = useRef<AudioPlayerHandle>(null);
   const dispatch = useDispatch();
 
+  const { error, setError, clearError } = useApiError();
+
   const [selectedStory, setSelectedStory] = useState<IStories | null>(null);
   const [topics, setTopics] = useState<ITopicData[]>(topicsData);
   const [selectTopics, setSelectTopics] = useState<ITopicData[]>([]);
@@ -269,13 +297,16 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
   const [showWorldMap, setShowWorldMap] = useState<boolean>(false);
   const [showRemix, setShowRemix] = useState<boolean>(false);
   const [showTranslator, setShowTranslator] = useState<boolean>(false);
+  
   const [createPost] = useCreatePostMutation();
   const [deletePost] = useDeletePostMutation();
   const { data: profile } = useGetProfileInfoQuery(undefined, { skip: !isLogin });
+  
   const lastSavedContentRef = useRef<string>("");
   const isSavingRef = useRef<boolean>(false);
   const hasSavedSessionRef = useRef<boolean>(false);
   const savedPostIdRef = useRef<string | null>(null);
+  
   const [endingsCache, setEndingsCache] = useState<{
     [uuid: string]: { style: string; ending: string; fullStory: string }[];
   }>({});
@@ -296,8 +327,10 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
 
   const handleGenerateAlternateEndings = async () => {
     if (!selectedStory) return;
+    clearError();
     setIsGeneratingEndings(true);
     const toastId = toast.loading("Generating alternate endings...");
+    
     try {
       const payload = {
         title: selectedStory.title,
@@ -305,31 +338,34 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
         tag: selectedStory.tag,
         language: selectedStory.language || "English",
       };
+      
       const generationRequest = isLogin
         ? generateAlternateEndings(payload)
         : generateFreeAlternateEndings(payload);
+        
       const res = await generationRequest.unwrap();
-      if (res && res.data) {
-        setEndingsCache((prev) => ({ ...prev, [selectedStory.uuid]: res.data }));
-        toast.success("Alternate endings generated successfully!");
-      } else {
-        toast.error("Failed to generate alternate endings.");
+      
+      if (!res || !Array.isArray(res.data)) {
+        throw new Error("Unexpected response format from the AI service.");
       }
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to generate alternate endings. Please try again.");
+      
+      setEndingsCache((prev) => ({ ...prev, [selectedStory.uuid]: res.data }));
+      toast.success("Alternate endings generated successfully!");
+    } catch (err: any) {
+      console.error("[StoriesView Alternate Ending Flow Failure]:", err);
+      const errorStatus = err?.status || err?.data?.status;
+      if (errorStatus) {
+        setError(getErrorMessage(new ApiError(errorStatus, err?.data?.message || "")));
+      } else {
+        setError(getErrorMessage(err));
+      }
+      toast.error("Failed to generate alternate endings.");
     } finally {
       toast.dismiss(toastId);
       setIsGeneratingEndings(false);
     }
   };
-  if (!stories.length) {
-  return (
-    <div className="text-center text-gray-400 py-10">
-      No stories generated yet. Start by entering a prompt ✨
-    </div>
-  );
-}
+
   const handleApplyEnding = (endingData: { style: string; ending: string; fullStory: string }) => {
     if (!selectedStory) return;
     const updatedStory = { ...selectedStory, content: endingData.fullStory };
@@ -580,9 +616,15 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
       </div>
     );
   }
-  if (!selectedStory) {
-    return null;
+  
+  if (!stories.length) {
+    return (
+      <div className="text-center text-gray-400 py-10">
+        No stories generated yet. Start by entering a prompt ✨
+      </div>
+    );
   }
+
   if (!selectedStory) return null;
 
   return (
@@ -592,8 +634,19 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
         .animate-fade-in-up { animation: fadeInUp 0.6s ease-out forwards; }
       `}</style>
 
+      {/* Accessible Error Notification Banner */}
+      {error && (
+        <div className="mb-6 max-w-4xl mx-auto animate-fade-in-up">
+          <ErrorToast
+            message={error}
+            onClose={clearError}
+            autoCloseDuration={6000}
+          />
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fade-in-up">
-        {/* ── Left column ── */}
+        {/* Left main grid context column */}
         <div className="col-span-1 lg:col-span-8 flex flex-col">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
             <div>
@@ -615,7 +668,7 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
               </div>
             </div>
 
-            {/* ── SPOT 1: Story selector thumbnails (circular) ── */}
+            {/* Story choosing thumbnails selection tray */}
             <div className="flex justify-start sm:justify-end">
               <div className="flex -space-x-5">
                 {stories && stories.length > 0 && stories.map((story) => (
@@ -639,7 +692,7 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
             </div>
           </div>
 
-          {/* Story content card */}
+          {/* Main layout container panel layout wrapper */}
           <div className="bg-slate-800/80 backdrop-blur-xl border border-slate-700/50 p-8 rounded-2xl shadow-2xl relative overflow-hidden">
             <div className="absolute top-[-50px] right-[-50px] w-48 h-48 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
             <div className="absolute bottom-[-50px] left-[-50px] w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -662,12 +715,7 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
                 <button type="button" className="rounded-lg px-4 py-2 bg-fuchsia-700 text-slate-200 font-semibold cursor-pointer hover:bg-fuchsia-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => setShowRemix(true)} disabled={!selectedStory}>
                   🔀 Remix
                 </button>
-                <button
-                  type="button"
-                  className="rounded-lg px-4 py-2 bg-emerald-700 text-slate-200 font-semibold cursor-pointer hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={() => setShowTranslator(true)}
-                  disabled={!selectedStory}
-                >
+                <button type="button" className="rounded-lg px-4 py-2 bg-emerald-700 text-slate-200 font-semibold cursor-pointer hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" onClick={() => setShowTranslator(true)} disabled={!selectedStory}>
                   🌍 Translate
                 </button>
                 <button
@@ -709,188 +757,146 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
             <div className="relative z-10 mt-6">
               <AudioPlayer ref={audioPlayerRef} text={selectedStory.content} title={selectedStory.title} onWordIndexChange={setNarrationWordIndex} onPlaybackStateChange={setNarrationState} />
             </div>
-            <div className="mt-6"><ContinueStoryButton /></div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 relative z-10">
+              <ContinueStoryButton />
+              <button
+                type="button"
+                className="w-full rounded-xl py-3.5 px-5 font-bold transition-all duration-200 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white shadow-lg shadow-orange-950/20 active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
+                onClick={handleGenerateAlternateEndings}
+                disabled={isGeneratingEndings}
+              >
+                {isGeneratingEndings ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Generating New Endings...
+                  </>
+                ) : (
+                  <>✨ Generate Alternate Endings</>
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* Topics + Alternate Endings */}
-          <div className="mt-7">
-            <div className="bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-xl p-6 mb-8">
-              <h3 className="text-lg font-bold text-slate-200 mb-4">Select Topics</h3>
-              <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                <input
-                  type="text"
-                  value={newTopicTitle}
-                  onChange={(event) => setNewTopicTitle(event.target.value)}
-                  onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); handleAddTopic(); } }}
-                  placeholder="Add related topic"
-                  className="flex-1 rounded-lg border border-slate-600 bg-slate-900/70 px-4 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                />
-                <button type="button" className="rounded-lg px-4 py-2 bg-blue-600 text-white font-semibold cursor-pointer hover:bg-blue-500 transition-colors" onClick={handleAddTopic}>
-                  Add Topic
+          {/* Alternative Endings Tab Selection Overlay Panels */}
+          {endingsCache[selectedStory.uuid] && endingsCache[selectedStory.uuid].length > 0 && (
+            <div className="mt-8 bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl animate-fade-in-up">
+              <div className="flex items-center justify-between border-b border-slate-700/60 pb-4 mb-4">
+                <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2">
+                  🔮 Choose Alternate Paths
+                </h3>
+                <button
+                  type="button"
+                  className="text-xs font-semibold text-rose-400 hover:text-rose-300 underline underline-offset-4 bg-none border-none cursor-pointer"
+                  onClick={handleResetEnding}
+                >
+                  Reset to Original Story
                 </button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {selectedStory ? (
-                  topics.map((topic, index) => (
-                    <span key={index} className={`inline-flex items-center gap-2 px-4 py-1.5 ${topic.className} rounded-full text-sm font-medium transition-transform hover:scale-105 shadow-sm`}>
-                      <button type="button" className="cursor-pointer" onClick={() => handleTopicClick(index)}>
-                        {topic.selected ? <i className="fa-solid fa-check"></i> : <i className="fa-solid fa-plus"></i>}{" "}{topic.title}
-                      </button>
-                      <button type="button" className="cursor-pointer border-l border-current/30 pl-2 disabled:cursor-not-allowed disabled:opacity-40" onClick={() => handleRemoveTopic(index)} disabled={topics.length <= 2} aria-label={`Remove ${topic.title}`}>
-                        <i className="fa-solid fa-xmark"></i>
-                      </button>
-                    </span>
-                  ))
-                ) : (
-                  <p className="text-gray-400">No topics available. Please generate a story first.</p>
-                )}
+
+              <div className="flex border-b border-slate-700/40 gap-2 mb-4 overflow-x-auto pb-1">
+                {endingsCache[selectedStory.uuid].map((item) => (
+                  <button
+                    key={item.style}
+                    type="button"
+                    className={`px-4 py-2 text-sm font-medium rounded-t-xl border-b-2 transition-all whitespace-nowrap ${
+                      activeEndingTab === item.style
+                        ? "text-blue-400 border-blue-500 bg-blue-500/10"
+                        : "text-slate-400 border-transparent hover:text-slate-300"
+                    }`}
+                    onClick={() => setActiveEndingTab(item.style)}
+                  >
+                    {item.style}
+                  </button>
+                ))}
+              </div>
+
+              {endingsCache[selectedStory.uuid].map((item) => {
+                if (activeEndingTab !== item.style) return null;
+                return (
+                  <div key={item.style} className="space-y-4">
+                    <div className="p-4 bg-slate-900/40 rounded-xl border border-slate-700/30">
+                      <h4 className="text-sm font-semibold text-amber-400 mb-1">Ending Highlight:</h4>
+                      <p className="text-slate-300 text-sm italic whitespace-pre-wrap">{item.ending}</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="rounded-lg px-4 py-2.5 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+                      onClick={() => handleApplyEnding(item)}
+                    >
+                      Apply This Path to Story
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Topics selection metadata footer panels layout wrapper */}
+          <div className="mt-7">
+            <div className="bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl">
+              <h3 className="text-lg font-semibold text-slate-200 mb-4">Select Story Topics</h3>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {topics.map((topic, index) => (
+                  <button
+                    key={topic.title}
+                    type="button"
+                    onClick={() => handleTopicClick(index)}
+                    className={`px-3 py-1.5 rounded-lg text-sm transition-all duration-150 ${
+                      topic.selected
+                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-950/40"
+                        : "bg-slate-700/50 text-slate-300 hover:bg-slate-700"
+                    }`}
+                  >
+                    {topic.title}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add custom topic (e.g. sci-fi)"
+                  value={newTopicTitle}
+                  onChange={(e) => setNewTopicTitle(e.target.value)}
+                  className="flex-1 px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-indigo-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddTopic}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-lg transition-colors"
+                >
+                  Add
+                </button>
               </div>
             </div>
-
-            {selectedStory && (
-              <div className="bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-xl p-6 mt-8 relative overflow-hidden">
-                <div className="absolute top-[-50px] right-[-50px] w-48 h-48 bg-purple-500/5 rounded-full blur-3xl pointer-events-none"></div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                  <div>
-                    <h3 className="text-xl font-bold text-slate-200">Alternate Endings</h3>
-                    <p className="text-xs text-slate-400 mt-1">Explore alternate narrative styles for your story context.</p>
-                  </div>
-                  {selectedStory.content !== originalStoryContent[selectedStory.uuid] && (
-                    <button type="button" onClick={handleResetEnding} className="rounded-lg px-4 py-2 bg-red-950/40 hover:bg-red-900/60 text-red-200 border border-red-700/50 font-semibold text-sm transition-all active:scale-95 cursor-pointer flex items-center gap-1.5">
-                      <i className="fa-solid fa-rotate-left"></i> Reset to Original
-                    </button>
-                  )}
-                </div>
-
-                {isGeneratingEndings ? (
-                  <div className="flex flex-col items-center justify-center py-10">
-                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-500 mb-4"></div>
-                    <p className="text-slate-300 text-sm font-medium animate-pulse">Generating alternate endings...</p>
-                  </div>
-                ) : endingsCache[selectedStory.uuid]?.length > 0 ? (
-                  <div>
-                    <div className="flex border-b border-slate-700/50 mb-6 overflow-x-auto whitespace-nowrap scrollbar-none">
-                      {["Happy Ending", "Dark Ending", "Plot Twist Ending", "Open Ending", "Cliffhanger Ending"].map((name) => {
-                        const endingData = (endingsCache[selectedStory.uuid] || []).find((e) => e.style === name);
-                        const isApplied = endingData && selectedStory.content === endingData.fullStory;
-                        return (
-                          <button key={name} type="button" onClick={() => setActiveEndingTab(name)}
-                            className={`px-5 py-3 font-semibold text-sm flex items-center gap-2 border-b-2 transition-all cursor-pointer ${activeEndingTab === name ? "border-purple-500 text-purple-400 bg-purple-500/5" : "border-transparent text-slate-400 hover:text-slate-300 hover:border-slate-700"}`}>
-                            <span>{name}</span>
-                            {isApplied && <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-ping"></span>}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    {(() => {
-                      const currentEndingData = (endingsCache[selectedStory.uuid] || []).find((e) => e.style === activeEndingTab);
-                      if (!currentEndingData) return null;
-                      const isCurrentlyApplied = selectedStory.content === currentEndingData.fullStory;
-                      return (
-                        <div className="bg-slate-900/40 rounded-xl p-6 border border-slate-700/30">
-                          <div className="flex justify-between items-center mb-4">
-                            <h4 className="text-lg font-bold text-slate-200">{activeEndingTab} Suggestion</h4>
-                            <div>
-                              {isCurrentlyApplied ? (
-                                <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-full font-semibold flex items-center gap-1.5">
-                                  <i className="fa-solid fa-check"></i> Applied to Story
-                                </span>
-                              ) : (
-                                <button type="button" onClick={() => handleApplyEnding(currentEndingData)} className="rounded-lg px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold text-sm transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-md hover:shadow-purple-500/20">
-                                  Apply to Story
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                          <div className="space-y-4">
-                            <div className="bg-slate-950/60 p-5 rounded-xl border border-slate-800 leading-relaxed text-slate-300 text-sm md:text-base italic shadow-inner whitespace-pre-wrap">
-                              <p>{currentEndingData.ending}</p>
-                            </div>
-                            <details className="group border border-slate-800 rounded-lg overflow-hidden bg-slate-950/20">
-                              <summary className="list-none flex items-center justify-between p-3 text-xs font-bold text-slate-400 hover:text-slate-200 cursor-pointer select-none">
-                                <span>PREVIEW FULL STORY WITH THIS ENDING</span>
-                                <span className="transition-transform duration-200 group-open:rotate-180">▼</span>
-                              </summary>
-                              <div className="p-4 border-t border-slate-800/80 text-xs text-slate-400 leading-relaxed max-h-56 overflow-y-auto whitespace-pre-wrap">
-                                {currentEndingData.fullStory}
-                              </div>
-                            </details>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-8 bg-slate-900/20 border border-dashed border-slate-700/40 rounded-xl">
-                    <button type="button" onClick={handleGenerateAlternateEndings} className="rounded-xl px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-lg hover:shadow-purple-500/30 flex items-center gap-2 cursor-pointer">
-                      Generate Alternate Endings
-                    </button>
-                    <p className="text-xs text-slate-400 mt-3 text-center max-w-sm px-4 leading-relaxed">
-                      Uses the story context to produce 5 unique ending variations (Happy, Dark, Plot Twist, Open, Cliffhanger) for comparison.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
 
-        {/* ── Right column: Preview ── */}
-        <div className="col-span-1 lg:col-span-4">
-          <div className="mb-5">
-            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-blue-400">
-              Preview
-            </h1>
-          </div>
-          <div className="bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden group">
-            <div className="relative flex flex-col rounded-lg">
-              <div className="relative m-3 overflow-hidden text-white rounded-xl" style={{ height: "192px" }}>
-                {/* ── SPOT 2: Rectangular cover image ── */}
-                <StoryCoverImage
-                  title={selectedStory.title}
-                  tag={selectedStory.tag}
-                  className="transition-transform duration-500 group-hover:scale-105"
-                  style={{ width: "100%", height: "100%", borderRadius: "0.75rem" }}
-                />
-              </div>
-
-              <div className="px-3 py-1">
-                <div className="flex justify-between items-center mb-2 w-full">
-                  <div className="flex items-center gap-2">
-                    <div className="inline-flex items-center rounded-full bg-purple-600 py-1 px-3 text-xs font-semibold text-white shadow-sm">
-                      {selectedStory.tag.toUpperCase()}
-                    </div>
-                    <div className="inline-flex items-center rounded-full bg-indigo-600 py-1 px-3 text-xs font-semibold text-white shadow-sm">
-                      🌐 {(selectedStory.language || "English").toUpperCase()}
-                    </div>
-                    <div className="inline-flex items-center rounded-full bg-slate-700 py-1 px-2.5 text-xs font-medium text-slate-300 shadow-sm gap-1">
-                      ⏱️ {calculateReadingTime(selectedStory.content)} min read
-                    </div>
-                  </div>
-                  <div><BookmarkButton storyId={selectedStory.uuid} /></div>
-                </div>
-                <h6 className="mb-1 text-gray-300 text-xl font-semibold">{selectedStory.title}</h6>
-                <p className="text-gray-400 font-light break-words text-sm sm:text-base">{getShortenedText(selectedStory.content)}</p>
-              </div>
+        {/* Right metadata panel display board */}
+        <div className="col-span-1 lg:col-span-4 space-y-6">
+          <div className="bg-slate-800/60 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 shadow-xl text-center">
+            <div className="w-20 h-20 mx-auto bg-indigo-600/10 rounded-full flex items-center justify-center text-indigo-400 text-2xl mb-3">
+              ⏱️
             </div>
+            <h4 className="text-slate-400 text-xs font-semibold tracking-wider uppercase mb-1">Reading Overhead</h4>
+            <p className="text-2xl font-bold text-slate-200">
+              {calculateReadingTime(selectedStory.content)} {calculateReadingTime(selectedStory.content) === 1 ? "min" : "mins"}
+            </p>
+            <p className="text-xs text-slate-400 mt-1">{getWordCount(selectedStory.content)} words total</p>
           </div>
         </div>
       </div>
 
-      {showRemix && selectedStory && (
-        <StoryRemix
-          story={selectedStory}
-          isLogin={isLogin}
-          onRemixComplete={(remixedStory) => { setStories([remixedStory, ...stories]); setSelectedStory(remixedStory); setShowRemix(false); }}
-          onClose={() => setShowRemix(false)}
-        />
-      )}
-      {showWorldMap && selectedStory && (
-        <StoryWorldMap story={selectedStory.content} title={selectedStory.title} onClose={() => setShowWorldMap(false)} />
-      )}
-      <Toaster position="top-right" reverseOrder={false} />
+      {/* Modals Mounting Portal Blocks */}
+      {showWorldMap && <StoryWorldMap story={selectedStory} onClose={() => setShowWorldMap(false)} />}
+      {showRemix && <StoryRemix story={selectedStory} onClose={() => setShowRemix(false)} />}
+      {showTranslator && <StoryTranslator story={selectedStory} onClose={() => setShowTranslator(false)} />}
+      
+      <Toaster position="bottom-right" reverseOrder={false} />
     </div>
   );
 };
-
 export default StoriesViewComponent;
