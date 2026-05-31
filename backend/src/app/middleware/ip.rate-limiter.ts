@@ -140,5 +140,14 @@ export const resetPasswordRateLimiter = createRateLimiter({
   actionLabel: "password reset",
 });
 
+
+export const aiGenerationRateLimiter = createRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  maxRequests: 10,
+  blockTimeMs: 5 * 60 * 1000, // 5 minutes
+  keyPrefix: "ai_generation",
+  actionLabel: "AI generation",
+});
+
 export default ipRateLimiter;
 

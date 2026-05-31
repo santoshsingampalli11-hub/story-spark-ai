@@ -4,11 +4,15 @@ import validateRequest from "../../middleware/validate.request";
 import { AIModelValidator } from "./ai_model.validation";
 import checkRequestLimit from "../../middleware/check.request.limit";
 import freeAiRateLimiter from "../../middleware/free-ai.rate-limiter";
+import {
+  aiGenerationRateLimiter,
+} from "../../middleware/ip.rate-limiter";
 const router = express.Router();
 
 // Generate Model
 router.post(
   "/generate-model",
+  aiGenerationRateLimiter,
   validateRequest(AIModelValidator.aiModel),
   checkRequestLimit(),
   AiModelController.aiModelGenerate
@@ -32,6 +36,7 @@ router.post(
 // Generate Alternate Endings
 router.post(
   "/generate-alternate-endings",
+  aiGenerationRateLimiter,
   validateRequest(AIModelValidator.aiAlternateEndings),
   checkRequestLimit(),
   AiModelController.aiModelAlternateEndings
@@ -48,6 +53,7 @@ router.post(
 // Remix Story
 router.post(
   "/remix",
+  aiGenerationRateLimiter,
   checkRequestLimit(),
   AiModelController.aiModelRemix
 );
@@ -60,6 +66,7 @@ router.post(
 // Translate Story
 router.post(
   "/translate",
+  aiGenerationRateLimiter,
   checkRequestLimit(),
   AiModelController.aiModelTranslate
 );
