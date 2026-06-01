@@ -36,7 +36,7 @@ interface CollabRoomInfoPayload {
 }
 
 interface CollabStoryUpdatedPayload {
-  story?: StoryChunk[];
+  story: StoryChunk[];
 }
 
 interface CollabNamespaceSocket {
@@ -82,7 +82,8 @@ export default function CollabRoom() {
       }
 
       // Connect to collab namespace
-      const collabSocket = (socket.io as unknown as SocketManagerWithCollabNamespace).of("/collab");
+      const collabManager = socket.io as unknown as SocketManagerWithCollabNamespace;
+      const collabSocket = collabManager.of("/collab");
 
       const handleRoomInfo = (data: CollabRoomInfoPayload) => {
         if (data && data.room) {
@@ -116,7 +117,7 @@ export default function CollabRoom() {
 
       const handleStoryUpdated = (data: CollabStoryUpdatedPayload) => {
         if (data && data.story) {
-          setRoom((prev) => (prev ? { ...prev, story: data.story } : null));
+          setRoom((prev) => (prev ? { ...prev, story: data.story } : prev));
         }
       };
 
@@ -141,7 +142,7 @@ export default function CollabRoom() {
 
     const socket = getSocketIo();
     if (socket) {
-      socket.io.of("/collab").emit("collab:add_text", {
+      (socket.io as unknown as SocketManagerWithCollabNamespace).of("/collab").emit("collab:add_text", {
         roomId,
         userId: user.userId,
         text: newText,
@@ -153,7 +154,7 @@ export default function CollabRoom() {
   const handleAIContinue = () => {
     const socket = getSocketIo();
     if (socket) {
-      socket.io.of("/collab").emit("collab:ai_continue", { roomId });
+      (socket.io as unknown as SocketManagerWithCollabNamespace).of("/collab").emit("collab:ai_continue", { roomId });
     }
   };
 
