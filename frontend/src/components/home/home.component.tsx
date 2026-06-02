@@ -12,7 +12,7 @@ import StartWritingComponent from "./start_writing/start_writing.component";
 import Contactus from "../contactus/contactus";
 import PersonalizedRecommendationsComponent from "./personalized_recommendations/personalized_recommendations.component";
 import { isLoggedIn } from "../../services/auth.service";
-import BackToTop from "../back_home/back_to_top.component";
+import ScrollToTopButton from "../ScrollToTopButton";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -58,7 +58,6 @@ const HomeComponent = () => {
           </motion.div>
         </div>
       </div>
-      
       <motion.div variants={itemVariants}><CommunitySpotlightComponent /></motion.div> 
       <motion.div variants={itemVariants}><ResourceComponent /></motion.div>
       <motion.div variants={itemVariants}><WriterFeedbackComponent /></motion.div>
