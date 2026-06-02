@@ -1,4 +1,5 @@
 import React from "react";
+
 import { createBrowserRouter, Navigate, Outlet, RouterProvider } from "react-router-dom";
 
 import { USER_ROLE } from "./constants/role";
@@ -9,6 +10,8 @@ import LoadingAnimation from "./components/loading/loading.component";
 import MagicCursorComponent from "./components/magic-cursor/magic_cursor.component";
 import HeroSectionComponent from "./components/hero/hero_section.component";
 import HomeComponent from "./components/home/home.component";
+import LoginComponent from "./components/login/login.component";
+import MagicCursorComponent from "./components/magic-cursor/magic_cursor.component";
 import NotFoundComponent from "./components/not-found.component";
 import DashboardLayout from "./components/dashboard/dashboard_layout.component";
 import LoginComponent from "./components/login/login.component";
@@ -62,14 +65,12 @@ type ProtectedRouteProps = {
   element?: React.ReactElement;
 };
 
-
 const ProtectedRoute = ({ allowedRoles, element }: ProtectedRouteProps) => {
   const user = getUserInfo();
 
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-
   if (!allowedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }
@@ -77,13 +78,7 @@ const ProtectedRoute = ({ allowedRoles, element }: ProtectedRouteProps) => {
   return element ? element : <Outlet />;
 };
 
-const ALL_ROLES = [
-  USER_ROLE.ADMIN,
-  USER_ROLE.SUPER_ADMIN,
-  USER_ROLE.WRITER,
-  USER_ROLE.USER,
-];
-
+const ALL_ROLES = [USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.WRITER, USER_ROLE.USER];
 const ELEVATED_ADMIN_ROLES = [USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN];
 
 const router = createBrowserRouter([
@@ -95,28 +90,15 @@ const router = createBrowserRouter([
         <MagicCursorComponent />
         <ScrollToTop />
         <RootLayout>
-          <React.Suspense fallback={<LoadingAnimation />}>
-            <Outlet />
-          </React.Suspense>
+          <Outlet />
         </RootLayout>
       </>
     ),
     children: [
-      {
-        index: true,
-        element: (
-          <>
-            <HeroSectionComponent />
-            <HomeComponent />
-          </>
-        ),
-      },
+      { index: true, element: <><HeroSectionComponent /><HomeComponent /></> },
       { path: "templates", element: <TemplatesComponent /> },
       { path: "writing-assistant", element: <WritingAssistantComponent /> },
       { path: "story-inspiration", element: <StoryInspirationWrapper /> },
-      { path: "stories", element: <StoriesComponent /> },
-      { path: "posts", element: <PostsPage /> },
-      { path: "story-workspace", element: <StoryWorkspace /> },
       { path: "login", element: <LoginComponent /> },
       { path: "signup", element: <SignUpComponent /> },
       { path: "forgot-password", element: <ForgotPasswordComponent /> },
@@ -134,6 +116,7 @@ const router = createBrowserRouter([
       { path: "contributors", element: <ContributorsComponent /> },
       { path: "report-bug", element: <ReportBug /> },
 
+      // Protected routes (logged-in users)
       {
         element: <ProtectedRoute allowedRoles={ALL_ROLES} />,
         children: [
@@ -145,6 +128,7 @@ const router = createBrowserRouter([
         ],
       },
 
+      // Story routes (token-protected)
       {
         path: "stories",
         element: (
@@ -174,57 +158,18 @@ const router = createBrowserRouter([
     ],
   },
 
-  // Isolated layout branches (Fixed relative context matching)
-  { path: "auth/email-validation", element: <EmailValidationComponent /> },
+  // Isolated layout branches
+  { path: "/auth/email-validation", element: <EmailValidationComponent /> },
   {
     element: <ProtectedRoute allowedRoles={ALL_ROLES} />,
     children: [
-      { path: "payment", element: <PaymentComponent /> },
-      { path: "collab", element: <CollabHome /> },
-      { path: "collab/:roomId", element: <CollabRoom /> },
+      { path: "/payment", element: <PaymentComponent /> },
+      { path: "/collab", element: <CollabHome /> },
+      { path: "/collab/:roomId", element: <CollabRoom /> },
     ],
   },
 
-  // Dashboard Structure (Cleaned redundant routing conditions)
-  // Isolated layout branches (Bypassing public navigation headers entirely)
-  {
-    path: "/auth/email-validation",
-    element: (
-      <React.Suspense fallback={<LoadingAnimation />}>
-        <EmailValidationComponent />
-      </React.Suspense>
-    ),
-  },
-  {
-    element: <ProtectedRoute allowedRoles={ALL_ROLES} />,
-    children: [
-      {
-        path: "/payment",
-        element: (
-          <React.Suspense fallback={<LoadingAnimation />}>
-            <PaymentComponent />
-          </React.Suspense>
-        ),
-      },
-      {
-        path: "/collab",
-        element: (
-          <React.Suspense fallback={<LoadingAnimation />}>
-            <CollabHome />
-          </React.Suspense>
-        ),
-      },
-      {
-        path: "/collab/:roomId",
-        element: (
-          <React.Suspense fallback={<LoadingAnimation />}>
-            <CollabRoom />
-          </React.Suspense>
-        ),
-      },
-    ],
-  },
-
+  // Dashboard
   {
     path: "/dashboard",
     element: <ProtectedRoute allowedRoles={ALL_ROLES} />,
@@ -234,10 +179,6 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <DashboardComponent /> },
           { path: "profile", element: <ProfileComponent /> },
-          { path: "settings", element: <SettingComponent /> },
-          { path: "published-stories", element: <PublishedStoriesComponent /> },
-          
-          // Elevated Admin Guard
           {
             element: <ProtectedRoute allowedRoles={ELEVATED_ADMIN_ROLES} />,
             children: [
@@ -245,24 +186,19 @@ const router = createBrowserRouter([
               { path: "users", element: <UserComponent /> },
             ],
           },
-          
-          // Writer Only Guard
+          {
+            element: <ProtectedRoute allowedRoles={ALL_ROLES} />,
+            children: [
+              { path: "settings", element: <SettingComponent /> },
+              { path: "published-stories", element: <PublishedStoriesComponent /> },
+            ],
+          },
           {
             element: <ProtectedRoute allowedRoles={[USER_ROLE.WRITER]} />,
             children: [{ path: "analytics", element: <AnalyticsPage /> }],
           },
-          
-          // Elevated Access Guard for Authorship Management
           {
-            element: (
-              <ProtectedRoute
-                allowedRoles={[
-                  USER_ROLE.ADMIN,
-                  USER_ROLE.SUPER_ADMIN,
-                  USER_ROLE.WRITER,
-                ]}
-              />
-            ),
+            element: <ProtectedRoute allowedRoles={[USER_ROLE.ADMIN, USER_ROLE.SUPER_ADMIN, USER_ROLE.WRITER]} />,
             children: [{ path: "post-lists", element: <PostListsComponent /> }],
           },
         ],
