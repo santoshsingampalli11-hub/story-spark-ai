@@ -3,7 +3,6 @@ import express, {
   NextFunction,
   Request,
   Response,
-  RequestHandler,
 } from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -25,7 +24,14 @@ const limiter = rateLimit({
   max: 100,
   message: "Too many requests, please try again later.",
 });
+<<<<<<< HEAD
 app.use(limiter as unknown as RequestHandler);
+=======
+
+app.use(limiter);
+
+
+>>>>>>> fa594400 (fix: remove unnecessary middleware type assertions)
 
 const defaultCorsOrigins = [
   "http://localhost:4001",
@@ -58,7 +64,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // Keeps your extended payload parsing enabled
 app.use(cookieParser() as any);
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser() as unknown as RequestHandler);
+app.use(cookieParser());
 
 app.use("/api/v1", Routers);
 
