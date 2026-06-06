@@ -7,12 +7,14 @@ interface ProtectedRouteProps {
 
 /**
  * SimpleProtectedRoute Component
- * Guards a route by verifying the stored token is present, structurally valid,
- * and not expired. Redirects to /login immediately when any check fails.
+ * Guards a route by verifying the stored token is present, decodable,
+ * and not past its `exp` claim. Redirects to /login immediately when
+ * any check fails.
  */
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  // isLoggedIn decodes the JWT and checks the `exp` claim, so expired or
-  // malformed tokens are treated the same as a missing token.
+  // isLoggedIn reads the token from localStorage, decodes it with
+  // jwtDecode, and returns false if the token is missing, malformed,
+  // or if Date.now() is past the `exp` claim.
   if (!isLoggedIn()) {
     return <Navigate to="/login" replace />;
   }
