@@ -6,68 +6,74 @@ import { Reaction } from "./reaction.model";
 import { Types } from "mongoose";
 import { Post } from "../post/post.model";
 
+type ReactionType = "like" | "love" | "laugh" | "angry" | "sad";
+
 const toggleReaction = async (
   postId: string,
-  type: string = "like",
+  type: ReactionType = "like",
   token: ITokenPayload
 ) => {
   const { email } = token;
-  const user = await User.findOne({ email });
+
+  const user = await User.findOne({ email }).select("_id").lean();
   if (!user) {
     throw new ApiError(httpStatus.BAD_REQUEST, "User not found!");
   }
-  const post = await Post.findOne({ _id: postId, isDeleted: { $ne: true } });
+
+  const post = await Post.findOne({
+    _id: postId,
+    isDeleted: { $ne: true },
+  }).select("likesCount reactions");
+
   if (!post) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Post not found!");
   }
 
-  try {
-    const newReaction = await Reaction.create({
-      postId: new Types.ObjectId(postId),
-      userId: user._id,
-      type: type,
-    });
+  const existingReaction = await Reaction.findOne({
+    postId: post._id,
+    userId: user._id,
+  });
 
-    const updatedPost = await Post.findOneAndUpdate(
-      { _id: postId },
-      { $inc: { likesCount: 1 }, $addToSet: { reactions: newReaction._id } },
-      { new: true }
-    );
-
-    return { message: "Reaction added", likesCount: updatedPost?.likesCount ?? 0 };
-  } catch (error: any) {
-    if (error?.code !== 11000) {
-      throw error;
-    }
-
-    const deletedReaction = await Reaction.findOneAndDelete({
-      postId: new Types.ObjectId(postId),
-      userId: user._id,
-      type: type,
-    });
-
-    if (deletedReaction) {
-      const updatedPost = await Post.findOneAndUpdate(
-        { _id: postId },
-        { $inc: { likesCount: -1 }, $pull: { reactions: deletedReaction._id } },
-        { new: true }
+  if (existingReaction) {
+    if (existingReaction.type === type) {
+      // Remove reaction if the same type is toggled
+      await Reaction.findByIdAndDelete(existingReaction._id);
+      post.reactions = (post.reactions || []).filter(
+        (id) => id && id.toString() !== existingReaction._id.toString()
       );
-
-      if (updatedPost && updatedPost.likesCount < 0) {
-        await Post.updateOne({ _id: postId }, { $set: { likesCount: 0 } });
-        return { message: "Reaction removed", likesCount: 0 };
-      }
+      post.likesCount = Math.max(0, (post.likesCount || 0) - 1);
+      await post.save();
 
       return {
-        message: "Reaction removed",
-        likesCount: Math.max(0, updatedPost?.likesCount ?? 0),
+        message: "Reaction removed successfully",
+        likesCount: post.likesCount,
+      };
+    } else {
+      // Update reaction to new type
+      existingReaction.type = type;
+      await existingReaction.save();
+
+      return {
+        message: "Reaction updated successfully",
+        likesCount: post.likesCount,
       };
     }
+  } else {
+    // Create new reaction
+    const newReaction = await Reaction.create({
+      postId: post._id,
+      userId: user._id,
+      type: type,
+    });
 
-    const currentPost = await Post.findById(postId);
+    post.reactions = post.reactions || [];
+    post.reactions.push(newReaction._id);
+    post.likesCount = (post.likesCount || 0) + 1;
+    await post.save();
+
     return {
-      message: "Reaction removed",
-      likesCount: currentPost?.likesCount ?? 0,
+      message: "Reaction added successfully",
+      likesCount: post.likesCount,
     };
   }
 };
