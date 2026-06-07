@@ -1,13 +1,10 @@
-import { AUTH_KEY } from "../constants/storage-key";
 import { AccessToken } from "../models/login";
 import { decodedToken } from "../utils/jwt";
-import {
-  getFromLocalStorage,
-  removeFromLocalStorage,
-  setToLocalStorage,
-} from "../utils/local-storage";
 
 const AUTH_CHANGE_EVENT = "story-spark-auth-change";
+
+// Secure in-memory storage instead of localStorage
+let authToken: string | null = null;
 
 const emitAuthChange = () => {
   if (typeof window === "undefined") return;
@@ -56,6 +53,15 @@ const buildUserInfo = (decodedData: RawJwtPayload): AuthUserInfo => ({
 });
 
 const getValidDecodedToken = () => {
+<<<<<<< HEAD
+  if (!authToken) return null;
+  try {
+    const decodedData = decodedToken(authToken);
+    if (!decodedData) { authToken = null; return null; }
+    if (typeof decodedData.exp === "number" &&
+      decodedData.exp <= Math.floor(Date.now() / 1000)) {
+      authToken = null; return null;
+=======
   const authToken = getFromLocalStorage(AUTH_KEY);
 
   if (authToken) {
@@ -82,17 +88,26 @@ const getValidDecodedToken = () => {
       console.error("Invalid auth token:", error);
       removeFromLocalStorage(AUTH_KEY);
       return null;
+>>>>>>> 6c3a0a208c04e4ff21c3746ba2817b5917cb80ca
     }
+    return buildUserInfo(decodedData);
+  } catch (error) {
+    console.error("Invalid auth token:", error);
+    authToken = null; return null;
   }
-  return null;
 };
 
 export const storeUserInfo = ({ accessToken }: AccessToken) => {
-  const result = setToLocalStorage(AUTH_KEY, accessToken);
+  authToken = accessToken;
   emitAuthChange();
-  return result;
 };
 
+<<<<<<< HEAD
+export const getUserInfo = (): AuthUserInfo | null => getValidDecodedToken();
+export const isLoggedIn = () => !!getValidDecodedToken();
+export const removeUserInfo = () => { authToken = null; emitAuthChange(); };
+export const getToken = () => authToken;
+=======
 export const getUserInfo = (): AuthUserInfo | null => {
   return getValidDecodedToken();
 };
@@ -109,4 +124,5 @@ export const removeUserInfo = () => {
 
 export const getToken = () => getFromLocalStorage(AUTH_KEY);
 
+>>>>>>> 6c3a0a208c04e4ff21c3746ba2817b5917cb80ca
 export const authChangeEventName = AUTH_CHANGE_EVENT;
