@@ -39,11 +39,10 @@ const aiFreeModelGenerate = catchAsync(async (req: Request, res: Response) => {
   const prompt = req.body;
   let userId = req.cookies.userId as string | undefined;
 
-  if (!userId) {
+ if (!userId) {
     userId = crypto.randomUUID();
-    setGuestUserIdCookie(res, userId);  // ✅ Fixed: now includes sameSite
-  }
-
+    setGuestUserIdCookie(res, userId);
+}
   const guard = createGuestQuotaGuard(userId);
   await runWithQuotaCleanup(guard, async () => {
     await reserveGuestQuota(userId);
@@ -84,11 +83,10 @@ const aiFreeModelAlternateEndings = catchAsync(
     const payload = req.body;
     let userId = req.cookies.userId as string | undefined;
 
-    if (!userId) {
+   if (!userId) {
       userId = crypto.randomUUID();
-      setGuestUserIdCookie(res, userId);  // ✅ Fixed: now includes sameSite
-    }
-
+      setGuestUserIdCookie(res, userId);
+}
     const guard = createGuestQuotaGuard(userId);
     await runWithQuotaCleanup(guard, async () => {
       await reserveGuestQuota(userId);
@@ -172,8 +170,8 @@ const aiFreeModelRemix = catchAsync(async (req: Request, res: Response) => {
 
   if (!userId) {
     userId = crypto.randomUUID();
-    res.cookie("userId", userId, { maxAge: 30 * 24 * 60 * 60 * 1000 });
-  }
+    setGuestUserIdCookie(res, userId);
+}
 
   const guard = createGuestQuotaGuard(userId);
   await runWithQuotaCleanup(guard, async () => {
@@ -214,10 +212,10 @@ const aiFreeModelTranslate = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body as ITranslatePayload;
   let userId = req.cookies.userId as string | undefined;
 
-  if (!userId) {
+ if (!userId) {
     userId = crypto.randomUUID();
-    res.cookie("userId", userId, { maxAge: 30 * 24 * 60 * 60 * 1000 });
-  }
+    setGuestUserIdCookie(res, userId);
+}
 
   const guard = createGuestQuotaGuard(userId);
   await runWithQuotaCleanup(guard, async () => {
@@ -260,8 +258,8 @@ const aiFreeModelChat = catchAsync(async (req: Request, res: Response) => {
 
   if (!userId) {
     userId = crypto.randomUUID();
-    res.cookie("userId", userId, { maxAge: 30 * 24 * 60 * 60 * 1000 });
-  }
+    setGuestUserIdCookie(res, userId);
+}
 
   const guard = createGuestQuotaGuard(userId);
   await runWithQuotaCleanup(guard, async () => {
