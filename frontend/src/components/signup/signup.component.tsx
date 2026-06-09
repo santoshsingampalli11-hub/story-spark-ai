@@ -269,7 +269,7 @@ const SignUpComponent = () => {
           )}
           {!showOtpField ? (
             <form className="space-y-5 w-full min-w-0 block box-border overflow-hidden" onSubmit={handleSubmit(onSubmit)}>
-              <div className="w-full min-w-0 box-border">
+              <div className="w-full box-border pl-8 pr-10">
                 <SSInput
                   label="Name"
                   name="name"
@@ -293,7 +293,7 @@ const SignUpComponent = () => {
                 />
               </div>
 
-              <div className="w-full min-w-0 box-border">
+              <div className="w-full box-border pl-8 pr-10">
                 <SSInput
                   label="Email address"
                   name="email"
@@ -307,7 +307,7 @@ const SignUpComponent = () => {
                 />
               </div>
 
-              <div className="w-full min-w-0 box-border">
+              <div className="w-full box-border pl-8 pr-10">
                 <SSInput
                   label="Password"
                   name="password"
@@ -356,7 +356,7 @@ const SignUpComponent = () => {
                 </div>
               )}
 
-              <div className="w-full min-w-0 box-border">
+              <div className="w-full box-border pl-8 pr-10">
                 <SSInput
                   label="Confirm Password"
                   name="confirmPassword"
@@ -384,7 +384,7 @@ const SignUpComponent = () => {
             </form>
           ) : (
             <div className="grid grid-cols-1 gap-5 w-full min-w-0 box-border">
-              <div className="w-full min-w-0 box-border">
+              <div className="w-full box-border pl-8 pr-10">
                 <SSInput
                   label="OTP"
                   name="otp"
