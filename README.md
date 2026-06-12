@@ -196,11 +196,40 @@ VITE_GOOGLE_CLIENT_ID=your-google-client-id
 
 ### Troubleshooting
 
+#### `pnpm` command not found
+
+- **Problem:** Running `pnpm` commands returns a "command not found" error.
+- **Possible cause:** `pnpm` is not installed globally on your system.
+- **Suggested solution:** Install `pnpm` globally using npm:
+  ```bash
+  npm install -g pnpm
+  ```
+  Verify the installation by checking the version:
+  ```bash
+  pnpm --version
+  ```
+
+#### Node.js version incompatibility
+
+- **Problem:** The backend or frontend fails to start, or throws unexpected runtime errors.
+- **Possible cause:** Your installed Node.js version is older than the required version. The project requires Node.js **18.18** or later.
+- **Suggested solution:** Check your installed Node.js version:
+  ```bash
+  node -v
+  ```
+  If your version is older than 18.18, please upgrade Node.js to the required version or later (available on the [official Node.js website](https://nodejs.org/)).
+
 #### MongoDB connection errors
 
 - **Problem:** The backend starts with database connection errors or cannot load API data.
 - **Possible cause:** `DATABASE_URL` is missing, incorrect, points to the wrong database, or MongoDB is not running.
 - **Suggested solution:** Check `backend/.env` and verify `DATABASE_URL` matches your local MongoDB or Atlas URI. If you use local MongoDB, make sure the MongoDB service is running before starting the backend.
+
+#### MongoDB Atlas connection issues
+
+- **Problem:** The backend cannot connect to a remote MongoDB Atlas database.
+- **Possible cause:** The `DATABASE_URL` in `backend/.env` contains incorrect credentials, or your current IP address is not whitelisted on MongoDB Atlas.
+- **Suggested solution:** Verify that your `DATABASE_URL` contains the correct database username and password. Ensure that your current IP address is whitelisted in the **Network Access** settings of your MongoDB Atlas dashboard.
 
 #### Missing environment variables
 
@@ -208,17 +237,54 @@ VITE_GOOGLE_CLIENT_ID=your-google-client-id
 - **Possible cause:** Required values are missing from `backend/.env` or `frontend/.env`.
 - **Suggested solution:** Compare your local `.env` files with `backend/.env.example` and `frontend/.env.example`, then add any missing variables.
 
+#### Environment variable changes not taking effect
+
+- **Problem:** Changes made to `.env` files do not seem to apply to the running application.
+- **Possible cause:** The development server only loads environment variables when it starts. Subsequent changes do not auto-reload.
+- **Suggested solution:** Stop your running frontend or backend development server (usually by pressing `Ctrl + C` in the terminal) and restart it (e.g., `npm run dev`) to apply the new configuration.
+
+#### Google OAuth configuration issues
+
+- **Problem:** Users are unable to log in with Google, or Google OAuth returns authentication errors.
+- **Possible cause:** Missing or mismatched Google Client IDs in your environment configuration, or credentials that do not match the Google Cloud Console setup.
+- **Suggested solution:** Verify that `GOOGLE_CLIENT_ID` is set correctly in `backend/.env` and `VITE_GOOGLE_CLIENT_ID` is set correctly in `frontend/.env`. Ensure both values match the client credentials configured for your web application in the [Google Cloud Console](https://console.cloud.google.com).
+
 #### Port conflicts
 
 - **Problem:** The frontend or backend cannot start because a port is already in use.
 - **Possible cause:** Another process is already using port **4001** for the frontend or **5000** for the backend.
-- **Suggested solution:** Find and stop the conflicting process, then restart the app. On Windows, run `netstat -ano | findstr :5000` or `netstat -ano | findstr :4001`, then stop the process with `taskkill /PID <PID> /F`. If needed, change the backend `PORT` in `backend/.env` or update the frontend dev server port in the frontend configuration.
+- **Suggested solution:** Find and stop the conflicting process, then restart the app.
+  - **Windows:** Run `netstat -ano | findstr :5000` or `netstat -ano | findstr :4001`, then stop the process with `taskkill /PID <PID> /F`.
+  - **Linux/macOS:** Run `lsof -i :5000` or `lsof -i :4001` to find the process ID (PID), then stop it with `kill -9 <PID>`.
+  If needed, change the backend `PORT` in `backend/.env` or update the frontend dev server port in the frontend configuration.
 
 #### Dependency installation issues
 
 - **Problem:** `npm install` fails or installed packages behave unexpectedly.
 - **Possible cause:** Cached dependencies, a stale lock file, or an incomplete install.
 - **Suggested solution:** Delete `node_modules` and the lock file, then reinstall dependencies from the repository root with `npm install`.
+
+#### `pnpm install` failures after switching branches
+
+- **Problem:** Running `pnpm install` fails or packages behave unexpectedly after switching git branches.
+- **Possible cause:** Stale dependencies or mismatched lockfiles from the previous branch are causing conflicts.
+- **Suggested solution:** Remove the `node_modules` directory and reinstall dependencies from the repository root:
+  ```bash
+  # Remove node_modules
+  # On Windows (PowerShell):
+  Remove-Item -Recurse -Force node_modules
+  # On Linux/macOS:
+  rm -rf node_modules
+
+  # Reinstall dependencies
+  pnpm install
+  ```
+
+#### Browser cache or hot reload problems
+
+- **Problem:** UI updates are not visible in the browser, or hot module replacement (HMR) seems to have frozen.
+- **Possible cause:** The browser has cached stale assets, or the Vite dev server's file watcher stopped responding.
+- **Suggested solution:** Perform a hard refresh in your browser (`Ctrl + Shift + R` on Windows/Linux or `Cmd + Shift + R` on macOS). If the issue persists, stop and restart the frontend development server.
 
 #### Admin seeding issues
 
