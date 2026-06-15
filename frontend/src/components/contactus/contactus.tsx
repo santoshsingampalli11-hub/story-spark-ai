@@ -271,37 +271,40 @@ export default function Contact() {
           whileInView={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          className="relative"
+          className="relative min-w-0"
         >
           <div className="absolute -inset-1 rounded-[2rem] bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-20 blur-2xl" />
 
         <form
-  onSubmit={submitHandler}
-  className="relative space-y-6 overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.05] p-7 backdrop-blur-2xl transition-all duration-300 hover:border-purple-500/30 sm:p-10"
->
+          onSubmit={submitHandler}
+          className="relative w-full max-w-full space-y-6 overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.05] p-7 backdrop-blur-2xl transition-all duration-300 hover:border-purple-500/30 sm:p-10"
+        >
   {/* NAME */}
   <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-[#0b1120]/80 px-5 py-3 transition-all duration-300 hover:border-purple-400/40 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20">
-    <User className="h-5 w-5 flex-shrink-0 text-purple-300" />
-    <div className="flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-[#0b1120]/80 px-5 py-3 transition-all duration-300 hover:border-purple-400/40 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20">      <label className="text-[10px] font-bold uppercase tracking-wider text-purple-300/80 mb-1 block">
-        Full Name
-      </label>
-       <input
-           type="text"
-           name="fullname"
-           value={formData.fullname}
-           onChange={changeHandler}
-           placeholder="John Doe"
-           required
-  className="w-full min-w-0 bg-transparent border-none p-0 text-base text-white outline-none focus:ring-0"
-/>
-    </div>
+  <User className="h-5 w-5 flex-shrink-0 text-purple-300" />
+
+  <div className="flex flex-col flex-1 min-w-0">
+    <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-300">
+      Full Name
+    </label>
+
+    <input
+      type="text"
+      name="fullname"
+      value={formData.fullname}
+      onChange={changeHandler}
+      placeholder="John Doe"
+      required
+      className="w-full min-w-0 max-w-full bg-transparent border-none p-0 text-base text-white placeholder:text-slate-400 outline-none focus:ring-0"
+    />
   </div>
+</div>
 
   {/* EMAIL */}
   <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-[#0b1120]/80 px-5 py-3 transition-all duration-300 hover:border-blue-400/40 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
     <Mail className="h-5 w-5 flex-shrink-0 text-blue-300" />
-    <div className="flex flex-col flex-grow min-w-0">
-      <label className="text-[10px] font-bold uppercase tracking-wider text-blue-300/80 mb-1 block">
+    <div className="flex flex-col flex-1 min-w-0">
+      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1 block">
         Email Address
       </label>
      <input
@@ -311,7 +314,7 @@ export default function Contact() {
   onChange={changeHandler}
   placeholder="john@example.com"
   required
-  className="w-full min-w-0 bg-transparent border-none p-0 text-base text-white outline-none focus:ring-0"
+  className="w-full min-w-0 max-w-full bg-transparent border-none p-0 text-base text-white placeholder:text-slate-400 outline-none focus:ring-0"
 />
     </div>
   </div>
@@ -319,8 +322,8 @@ export default function Contact() {
   {/* SUBJECT */}
   <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-[#0b1120]/80 px-5 py-3 transition-all duration-300 hover:border-pink-400/40 focus-within:border-pink-500 focus-within:ring-2 focus-within:ring-pink-500/20">
     <FileText className="h-5 w-5 flex-shrink-0 text-pink-300" />
-    <div className="flex flex-col flex-grow min-w-0">
-      <label className="text-[10px] font-bold uppercase tracking-wider text-pink-300/80 mb-1 block">
+    <div className="flex flex-col flex-1 min-w-0">
+      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1 block">
         Subject
       </label>
       <input
@@ -338,8 +341,8 @@ export default function Contact() {
   {/* MESSAGE */}
   <div className="flex items-start gap-4 rounded-2xl border border-white/10 bg-[#0b1120]/80 px-5 py-4 transition-all duration-300 hover:border-purple-400/40 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20">
     <Pencil className="mt-1 h-5 w-5 flex-shrink-0 text-purple-300" />
-    <div className="flex flex-col flex-grow min-w-0">
-      <label className="text-[10px] font-bold uppercase tracking-wider text-purple-300/80 mb-2 block">
+    <div className="flex flex-col flex-1 min-w-0">
+      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-2 block">
         Message
       </label>
       <textarea
@@ -350,7 +353,7 @@ export default function Contact() {
   placeholder="Tell us about your idea..."
   maxLength={500}
   required
-  className="w-full min-w-0 resize-none bg-transparent border-none p-0 text-base text-white outline-none focus:ring-0"
+  className="w-full min-w-0 max-w-full resize-none bg-transparent border-none p-0 text-base text-white placeholder:text-slate-400 outline-none focus:ring-0"
 />
 <div className="mt-2 text-right text-xs text-slate-400">
   {formData.message.length}/500

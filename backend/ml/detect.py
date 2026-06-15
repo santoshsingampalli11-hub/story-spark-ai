@@ -7,7 +7,7 @@ Usage:
     python detect.py              ← interactive mode, enter your own session
     from detect import detect     ← import in Flask server
 
-Place at: story-spark-ai/ml/detect.py
+Place at: story-spark-ai/backend/ml/detect.py
 """
 
 import os
@@ -22,12 +22,11 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 from tensorflow.keras.models import load_model
 from model import SEQ_LEN, N_FEATURES
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SAVE_DIR = os.path.join(BASE_DIR, "saved")
-
-MODEL_PATH = os.path.join(SAVE_DIR, "model.keras")
-SCALER_PATH = os.path.join(SAVE_DIR, "scaler.pkl")
-THRESHOLD_PATH = os.path.join(SAVE_DIR, "threshold.json")
+from pathlib import Path
+ML_DIR = Path(__file__).resolve().parent
+MODEL_PATH = ML_DIR / "saved" / "model.keras"
+SCALER_PATH = ML_DIR / "saved" / "scaler.pkl"
+THRESHOLD_PATH = ML_DIR / "saved" / "threshold.json"
 
 _ML_ASSETS_CACHE = None
 
@@ -109,11 +108,11 @@ def load_ml_assets_into_cache():
         return _ML_ASSETS_CACHE
 
     for path in (MODEL_PATH, SCALER_PATH, THRESHOLD_PATH):
-        if not os.path.exists(path):
+        if not path.exists():
             raise FileNotFoundError(f"{path} not found — run train.py first.")
 
-    model = load_model(MODEL_PATH)
-    scaler = joblib.load(SCALER_PATH)
+    model = load_model(str(MODEL_PATH))
+    scaler = joblib.load(str(SCALER_PATH))
 
     with open(THRESHOLD_PATH, "r", encoding="utf-8") as f:
         threshold_data = json.load(f)
@@ -175,18 +174,19 @@ SUGGESTIONS = {
 }
 
 
-def _dominant_feature(session_raw: np.ndarray) -> str:
-    """Return the most anomalous feature name for a raw session array."""
-    avg = session_raw.mean(axis=0)
-    scores = {
-        "prompt_length":      1 / (avg[0] + 1),
-        "regeneration_count": avg[2] / 40,
-        "backspace_ratio":    avg[4] / 100,
-        "pause_duration":     avg[5] / 90,
-        "confidence_score":   1 / (avg[6] + 1),
-        "blocked_word_count": avg[7] / 15,
-    }
-    return max(scores, key=scores.get)
+def _dominant_feature(seq_scaled: np.ndarray, reconstructed: np.ndarray) -> str:
+    """
+    Return the most anomalous feature name by evaluating the 
+    Mean Squared Error (MSE) per feature dimension from the Autoencoder output.
+    """
+    # Calculate the MSE across the batch and sequence length dimensions (axis 0 and 1)
+    # seq_scaled and reconstructed shapes are (1, SEQ_LEN, N_FEATURES)
+    mse_per_feature = np.mean((seq_scaled - reconstructed) ** 2, axis=(0, 1))
+    
+    # Find the feature index with the maximum reconstruction error
+    dominant_idx = int(np.argmax(mse_per_feature))
+    
+    return FEATURE_KEYS[dominant_idx]
 
 
 # ── Suggestion history — avoid repeating the same tip ────────────────────────
@@ -278,7 +278,7 @@ def detect(session: list) -> dict:
         "confidence":   confidence,
         "anomaly_score": round(anomaly_score, 6),
         "threshold":    round(threshold, 6),
-        "suggestion":   _get_unique_suggestion(_dominant_feature(session_raw)) if is_stuck else "",
+        "suggestion":   _get_unique_suggestion(_dominant_feature(seq_scaled, reconstructed)) if is_stuck else "",
     }
 
 
@@ -425,7 +425,7 @@ def batch_detect(sessions: list[list]) -> list[dict]:
                 "anomaly_score": round(anomaly_score, 6),
                 "threshold":     round(threshold, 6),
                 "suggestion":    _get_unique_suggestion(
-                                     _dominant_feature(session_raw)
+                                     _dominant_feature(seq_scaled, reconstructed)
                                  ) if is_stuck else "",
             })
 

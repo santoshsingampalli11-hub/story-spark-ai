@@ -25,6 +25,10 @@ const model = genAI.getGenerativeModel({
   model: "gemini-2.5-flash",
 });
 
+const fallbackModel = genAI.getGenerativeModel({
+  model: "gemini-2.5-flash-8b",
+});
+
 const generationConfig = {
   temperature: 1,
   topP: 0.95,
@@ -135,6 +139,48 @@ const buildCharactersInstruction = (characters?: ICharacter[]): string => {
   return `Cast of Characters (You MUST incorporate these characters into all generated stories and maintain their roles, relationship dynamics, and traits consistently):\n${charsString}\n\n`;
 };
 
+import { GenerativeModel } from "@google/generative-ai";
+
+const executeWithRetryAndFallback = async <T>(
+  operation: (activeModel: GenerativeModel) => Promise<T>,
+  signal?: AbortSignal
+): Promise<T> => {
+  const maxRetries = 2;
+  const baseDelayMs = 1000;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      throwIfAborted(signal);
+      return await operation(model);
+    } catch (error: any) {
+      if (signal?.aborted || error instanceof GenerationAbortedError || error?.name === 'AbortError') {
+        throw new GenerationAbortedError();
+      }
+      
+      const status = error?.status || error?.response?.status;
+      const isRetryable = status >= 500 || status === 429 || error?.message?.includes("fetch failed");
+      
+      if (!isRetryable || attempt === maxRetries) {
+        break; // Break to try fallback
+      }
+      
+      const delay = baseDelayMs * Math.pow(2, attempt - 1);
+      await new Promise(res => setTimeout(res, delay));
+    }
+  }
+  
+  // Fallback to the smaller model
+  try {
+    throwIfAborted(signal);
+    return await operation(fallbackModel);
+  } catch (fallbackError: any) {
+    if (signal?.aborted || fallbackError instanceof GenerationAbortedError || fallbackError?.name === 'AbortError') {
+      throw new GenerationAbortedError();
+    }
+    throw fallbackError;
+  }
+};
+
 export async function generateWithGeminiStories(
   prompt: string,
   wordLength: number = 250,
@@ -150,27 +196,25 @@ export async function generateWithGeminiStories(
   assertGeminiApiKeyConfigured();
 
   try {
-    const chatSession = model.startChat({
-      generationConfig,
-      safetySettings,
-      history: [],
-    });
+    const response = await executeWithRetryAndFallback(async (activeModel) => {
+      const chatSession = activeModel.startChat({
+        generationConfig,
+        safetySettings,
+        history: [],
+      });
 
-    // NEW: Prepend the tone instruction block to the Gemini prompt when a tone is selected.
-    const toneInstruction = buildToneInstruction(tone);
-    const genreInstruction = buildGenreInstruction(genre);
-    const charactersInstruction = buildCharactersInstruction(characters);
-
-    const response = await chatSession.sendMessage(
-      `${genreInstruction}${toneInstruction}${charactersInstruction}You are an expert storyteller and emotion analyst. The user provided the following base prompt: "${prompt}".
-      First, enhance this prompt to be more emotionally engaging and context-sensitive (e.g., add suspense, joy, or mystery).
-      Then, generate ${numStories} different short stories based on this ENHANCED prompt.
-      The stories MUST be written entirely in the ${language} language.
-      For each story, also analyze and detect the primary emotional tones (e.g., ["Joy", "Suspense", "Motivation"]) and the specific genre.
-      Each story should be in JSON format with fields: "title", "content", "tag" (the main topic), "emotions" (an array of strings), "genre" (a string), and "enhancedPrompt" (the improved prompt used).
-      Ensure each story is approximately ${wordLength} words long.
-      Return only valid JSON array output.`
-    );
+      return chatSession.sendMessage(
+        `${genreInstruction}${toneInstruction}${charactersInstruction}You are an expert storyteller and emotion analyst. The user provided the following base prompt: "${prompt}".
+        First, enhance this prompt to be more emotionally engaging and context-sensitive (e.g., add suspense, joy, or mystery).
+        Then, generate ${numStories} different short stories based on this ENHANCED prompt.
+        The stories MUST be written entirely in the ${language} language.
+        For each story, also analyze and detect the primary emotional tones (e.g., ["Joy", "Suspense", "Motivation"]) and the specific genre.
+        Each story should be in JSON format with fields: "title", "content", "tag" (the main topic), "emotions" (an array of strings), "genre" (a string), and "enhancedPrompt" (the improved prompt used).
+        Ensure each story is approximately ${wordLength} words long.
+        Return only valid JSON array output.`,
+        { signal }
+      );
+    }, signal);
 
     throwIfAborted(signal);
 
@@ -188,7 +232,7 @@ export async function generateWithGeminiStories(
     // Fetch images for stories concurrently
     const imagePromises = stories.map(async (story) => {
       try {
-        const imageResponse = await fetchImageURL(String(story?.tag ?? story?.title ?? ""));
+        const imageResponse = await fetchImageURL(String(story?.tag ?? story?.title ?? ""), signal);
         return imageResponse?.imageUrl || "";
       } catch (e) {
         return "";
@@ -201,12 +245,12 @@ export async function generateWithGeminiStories(
       try {
         const promptTitle = story?.title ? story.title : story?.tag ? story.tag : "Untitled";
         const promptTag = story?.tag || "General";
-        const generated = await generateStoryboardImage(`Cover illustration for a book titled: ${promptTitle}. Theme: ${promptTag}. Style: cinematic, detailed`);
+        const generated = await generateStoryboardImage(`Cover illustration for a book titled: ${promptTitle}. Theme: ${promptTag}. Style: cinematic, detailed`, signal);
         if (generated) {
           coverImages.push(generated);
           continue;
         }
-        const imageResponse = await fetchImageURL(String(story?.title ?? story?.tag ?? ""));
+        const imageResponse = await fetchImageURL(String(story?.title ?? story?.tag ?? ""), signal);
         coverImages.push(imageResponse?.imageUrl || "");
       } catch (e) {
         const errorMsg = e instanceof Error ? e.message : String(e);
@@ -242,36 +286,42 @@ export async function generateAlternateEndingsWithGemini(
   title: string,
   content: string,
   tag: string,
-  language: string = "English"
+  language: string = "English",
+  signal?: AbortSignal
 ): Promise<IAlternateEnding[]> {
+  throwIfAborted(signal);
   assertGeminiApiKeyConfigured();
 
   try {
-    const chatSession = model.startChat({
-      generationConfig,
-      safetySettings,
-      history: [],
-    });
-    const response = await chatSession.sendMessage(
-      `You are a professional narrative editor. Analyze the following story (Title: "${title}", Genre/Tag: "${tag}", Language: "${language}"):
-      Story Content:
-      "${content}"
-      
-      Generate 5 alternate endings for this story corresponding to the following styles:
-      1. "Happy Ending"
-      2. "Dark Ending"
-      3. "Plot Twist Ending"
-      4. "Open Ending"
-      5. "Cliffhanger Ending"
-      
-      The generated alternate endings and the rewritten stories MUST be written entirely in the ${language} language.
-      For each alternate ending, provide:
-      - "style": The style name exactly as listed above.
-      - "ending": A short paragraph or two describing the alternate ending scene itself.
-      - "fullStory": The complete rewritten story with this new ending seamlessly integrated. The new ending should replace the original ending of the story, preserving the original story's context, setup, character names, and writing tone.
-      
-      Return the output as a JSON array of objects with the fields: "style", "ending", and "fullStory".`
-    );
+    const response = await executeWithRetryAndFallback(async (activeModel) => {
+      const chatSession = activeModel.startChat({
+        generationConfig,
+        safetySettings,
+        history: [],
+      });
+      return chatSession.sendMessage(
+        `You are a professional narrative editor. Analyze the following story (Title: "${title}", Genre/Tag: "${tag}", Language: "${language}"):
+        Story Content:
+        "${content}"
+        
+        Generate 5 alternate endings for this story corresponding to the following styles:
+        1. "Happy Ending"
+        2. "Dark Ending"
+        3. "Plot Twist Ending"
+        4. "Open Ending"
+        5. "Cliffhanger Ending"
+        
+        The generated alternate endings and the rewritten stories MUST be written entirely in the ${language} language.
+        For each alternate ending, provide:
+        - "style": The style name exactly as listed above.
+        - "ending": A short paragraph or two describing the alternate ending scene itself.
+        - "fullStory": The complete rewritten story with this new ending seamlessly integrated. The new ending should replace the original ending of the story, preserving the original story's context, setup, character names, and writing tone.
+        
+        Return the output as a JSON array of objects with the fields: "style", "ending", and "fullStory".`,
+        { signal }
+      );
+    }, signal);
+    throwIfAborted(signal);
     const text = response.response.text();
 
     let parsed: unknown;
@@ -333,9 +383,7 @@ export async function generateWithGeminiStoriesStream(
     throw new GenerationAbortedError();
   }
 
-  const streamingModel = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-  });
+
 
   const streamingConfig = {
     temperature: 1,
@@ -345,23 +393,25 @@ export async function generateWithGeminiStoriesStream(
   };
 
   try {
-    const result = await streamingModel.generateContentStream({
-      contents: [
-        {
-          role: "user",
-          parts: [
-            {
-              text: `Generate ${numStories} different short stories based on the following prompt: "${prompt}".
-              Each story should be in JSON format with fields: "title", "content", and "tag".
-              Ensure each story is approximately ${wordLength} words long.
-              Return the output as a JSON array.`,
-            },
-          ],
-        },
-      ],
-      generationConfig: streamingConfig,
-      safetySettings,
-    });
+    const result = await executeWithRetryAndFallback(async (activeModel) => {
+      return activeModel.generateContentStream({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `Generate ${numStories} different short stories based on the following prompt: "${prompt}".
+                Each story should be in JSON format with fields: "title", "content", and "tag".
+                Ensure each story is approximately ${wordLength} words long.
+                Return the output as a JSON array.`,
+              },
+            ],
+          },
+        ],
+        generationConfig: streamingConfig,
+        safetySettings,
+      }, { signal });
+    }, signal);
 
     for await (const chunk of result.stream) {
       if (signal?.aborted) {
@@ -389,8 +439,10 @@ export async function generateRemixWithGemini(
   tag: string,
   remixType: string,
   remixOption: string,
-  language: string = "English"
+  language: string = "English",
+  signal?: AbortSignal
 ): Promise<{ title: string; content: string; tag: string }> {
+  throwIfAborted(signal);
   const remixPrompts: Record<string, string> = {
     setting: `Rewrite this story keeping the same plot and characters but change the setting to: ${remixOption}. Keep the same story structure.`,
     perspective: `Rewrite this story from the perspective of: ${remixOption}. Keep the same events but show them from this character's point of view.`,
@@ -417,16 +469,17 @@ Write the remixed story in ${language}. Return a JSON object with this exact str
 }`;
 
   try {
-    const chatSession = model.startChat({
-      generationConfig: {
-        ...generationConfig,
-        maxOutputTokens: 4096,
-      },
-      safetySettings,
-      history: [],
-    });
-
-    const result = await chatSession.sendMessage(prompt);
+    const result = await executeWithRetryAndFallback(async (activeModel) => {
+      const chatSession = activeModel.startChat({
+        generationConfig: {
+          ...generationConfig,
+          maxOutputTokens: 4096,
+        },
+        safetySettings,
+        history: [],
+      });
+      return chatSession.sendMessage(prompt, { signal });
+    }, signal);
     const rawText = result.response.text();
     const cleanText = sanitizeJsonText(rawText);
     const parsed = JSON.parse(cleanText);
@@ -455,17 +508,18 @@ export async function generateStoryContinuationWithGemini(
   assertGeminiApiKeyConfigured();
 
   try {
-    const chatSession = model.startChat({
-      generationConfig: {
-        ...generationConfig,
-        maxOutputTokens: 2048,
-      },
-      safetySettings,
-      history: [],
-    });
+    const response = await executeWithRetryAndFallback(async (activeModel) => {
+      const chatSession = activeModel.startChat({
+        generationConfig: {
+          ...generationConfig,
+          maxOutputTokens: 2048,
+        },
+        safetySettings,
+        history: [],
+      });
 
-    const response = await chatSession.sendMessage(
-      `You are an expert storyteller. The user has written the following story so far:
+      return chatSession.sendMessage(
+        `You are an expert storyteller. The user has written the following story so far:
 
 "${storyContext}"
 
@@ -474,8 +528,10 @@ Continue this story naturally with 2-4 paragraphs that maintain the same tone, s
 Return only valid JSON with this exact structure:
 {
   "continuation": "your continuation text here"
-}`
-    );
+}`,
+        { signal }
+      );
+    }, signal);
 
     throwIfAborted(signal);
 
@@ -516,8 +572,10 @@ Return only valid JSON with this exact structure:
 export async function translateStoryWithGemini(
   title: string,
   content: string,
-  targetLanguage: string
+  targetLanguage: string,
+  signal?: AbortSignal
 ): Promise<{ title: string; content: string }> {
+  throwIfAborted(signal);
   const prompt = `You are a professional translator. Translate the following story into ${targetLanguage}.
 
 Title: ${title}
@@ -532,16 +590,17 @@ Return a JSON object with this exact structure:
 Preserve the story's tone, style and meaning. Only translate — do not modify the story.`;
 
   try {
-    const chatSession = model.startChat({
-      generationConfig: {
-        ...generationConfig,
-        maxOutputTokens: 4096,
-      },
-      safetySettings,
-      history: [],
-    });
-
-    const result = await chatSession.sendMessage(prompt);
+    const result = await executeWithRetryAndFallback(async (activeModel) => {
+      const chatSession = activeModel.startChat({
+        generationConfig: {
+          ...generationConfig,
+          maxOutputTokens: 4096,
+        },
+        safetySettings,
+        history: [],
+      });
+      return chatSession.sendMessage(prompt, { signal });
+    }, signal);
     const rawText = result.response.text();
     const cleanText = sanitizeJsonText(rawText);
     const parsed = JSON.parse(cleanText);
@@ -562,8 +621,10 @@ Preserve the story's tone, style and meaning. Only translate — do not modify t
 }
 
 export async function generateStoryboardWithGemini(
-  payload: IStoryVisualizerPayload
+  payload: IStoryVisualizerPayload,
+  signal?: AbortSignal
 ): Promise<IStoryVisualizerResult> {
+  throwIfAborted(signal);
   assertGeminiApiKeyConfigured();
 
   const { title, content, genre = "General", language = "English" } = payload;
@@ -599,16 +660,17 @@ Rules:
 - Do not generate images or image URLs.`;
 
   try {
-    const chatSession = model.startChat({
-      generationConfig: {
-        ...generationConfig,
-        maxOutputTokens: 4096,
-      },
-      safetySettings,
-      history: [],
-    });
-
-    const result = await chatSession.sendMessage(prompt);
+    const result = await executeWithRetryAndFallback(async (activeModel) => {
+      const chatSession = activeModel.startChat({
+        generationConfig: {
+          ...generationConfig,
+          maxOutputTokens: 4096,
+        },
+        safetySettings,
+        history: [],
+      });
+      return chatSession.sendMessage(prompt, { signal });
+    }, signal);
     const parsed = JSON.parse(sanitizeJsonText(result.response.text()));
 
     const scenes = parsed?.scenes;
@@ -667,22 +729,25 @@ Rules:
 
 export async function chatWithGemini(
   message: string,
-  history: { role: string; parts: { text: string }[] }[] = []
+  history: { role: string; parts: { text: string }[] }[] = [],
+  signal?: AbortSignal
 ): Promise<string> {
+  throwIfAborted(signal);
   assertGeminiApiKeyConfigured();
 
   try {
-    const chatSession = model.startChat({
-      generationConfig: {
-        ...generationConfig,
-        maxOutputTokens: 4096,
-        responseMimeType: "text/plain",
-      },
-      safetySettings,
-      history,
-    });
-
-    const result = await chatSession.sendMessage(message);
+    const result = await executeWithRetryAndFallback(async (activeModel) => {
+      const chatSession = activeModel.startChat({
+        generationConfig: {
+          ...generationConfig,
+          maxOutputTokens: 4096,
+          responseMimeType: "text/plain",
+        },
+        safetySettings,
+        history,
+      });
+      return chatSession.sendMessage(message, { signal });
+    }, signal);
 
     return result.response.text();
   } catch (error: unknown) {

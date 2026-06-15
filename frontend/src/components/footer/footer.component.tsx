@@ -73,33 +73,17 @@ const FooterComponent: React.FC = () => {
   ];
 
   const legalLinks = [
-    { label: "Privacy", to: "/privacy-policy" },
+    { label: "Privacy Policy", to: "/privacy-policy" },
     { label: "Cookie Policy", to: "/cookie-policy" },
     { label: "Terms & Conditions", to: "/terms" },
     { label: "Guidelines", to: "/guidelines" },
   ];
 
   const socialLinks = [
-    {
-      icon: "fa-instagram",
-      url: "https://www.instagram.com/",
-      label: "Follow us on Instagram",
-    },
-    {
-      icon: "fa-linkedin",
-      url: "https://www.linkedin.com/",
-      label: "Connect with us on LinkedIn",
-    },
-    {
-      icon: "fa-x-twitter",
-      url: "https://x.com/",
-      label: "Follow us on X (Twitter)",
-    },
-    {
-      icon: "fa-facebook",
-      url: "https://www.facebook.com/",
-      label: "Follow us on Facebook",
-    },
+    { icon: "fa-linkedin", url: "https://www.linkedin.com/in/ronisarkar76/", label: "Connect with us on LinkedIn" },
+    { icon: "fa-twitter", url: "https://x.com/ronisarkar_exe", label: "Follow us on X (Twitter)" },
+    { icon: "fa-github", url: "https://github.com/ronisarkarexe", label: "Check out GitHub" },
+    { icon: "fa-envelope", url: "mailto:ronichandrasarkar@gmail.com", label: "Email us" },
   ];
 
   const currentYear = new Date().getFullYear();
@@ -328,7 +312,7 @@ const FooterComponent: React.FC = () => {
                   {label}
                 </Link>
                 {i < legalLinks.length - 1 && (
-                  <span className="text-white/[0.12]">|</span>
+                  <span className="text-white/12">|</span>
                 )}
               </React.Fragment>
 
