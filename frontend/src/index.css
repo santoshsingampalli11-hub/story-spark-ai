@@ -53,6 +53,20 @@
   box-sizing: border-box;
 }
 
+/* ==========================================================================
+   Login & Signup Form Overflow Fix
+   Prevents inputs from exceeding their card container boundaries.
+   The @tailwindcss/forms plugin can inject min-width / width values that
+   override Tailwind utilities; these rules ensure containment.
+   ========================================================================== */
+input,
+select,
+textarea,
+button {
+  min-width: 0;
+  max-width: 100%;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -1102,8 +1116,14 @@ html.dark .contact-channel-link:hover {
 /* Glassmorphism Dynamic Contact Card Form */
 .contact-form-shell {
   position: relative;
+  width: 100%;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
   border-radius: 1.5rem;
   transition: transform 250ms ease;
+  display: flex;
+  justify-content: center;
 }
 
 .contact-form-shell:hover {
@@ -1219,63 +1239,6 @@ html.dark .contact-input::placeholder { color: rgba(148, 163, 184, 0.78); }
 .contact-input[aria-invalid="true"] { border-color: rgba(244, 63, 94, 0.55); box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.10); }
 .contact-field-error { min-height: 1rem; line-height: 1.35; }
 
-/* Field-level inline error message */
-.contact-field-error-msg {
-  display: flex;
-  align-items: center;
-  margin-top: 0.3rem;
-  padding-left: 0.25rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: rgba(248, 113, 113, 0.9);
-  letter-spacing: 0.01em;
-  animation: fade-in 0.2s ease-out both;
-}
-
-/* Required star indicator */
-.contact-required-star {
-  color: #a78bfa;
-  font-size: 0.85em;
-  font-weight: 700;
-}
-
-/* Info cards grid (location, availability, etc.) */
-.contact-info-card {
-  transition: border-color 200ms ease, background-color 200ms ease, transform 200ms ease;
-}
-
-.contact-info-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(139, 92, 246, 0.2);
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-/* Social icon buttons */
-.contact-social-btn {
-  transform: translateZ(0);
-  will-change: transform;
-  transition: transform 180ms ease, border-color 200ms ease, background-color 200ms ease, color 200ms ease, box-shadow 200ms ease;
-}
-
-.contact-social-btn:hover {
-  transform: translate3d(0, -2px, 0) scale(1.08);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-}
-
-.contact-social-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.35);
-}
-
-/* Fade-in animation for success/error banners */
-.contact-fade-in {
-  animation: fade-in 0.3s ease-out both;
-}
-
-/* Submitting State Custom Transitions */
-.contact-submit-btn {
-  transform: translateZ(0);
-
 /* Submitting State Custom Transitions */
 .contact-submit-btn {
   transform: translateZ(0);
@@ -1376,51 +1339,6 @@ html.dark .contact-input::placeholder { color: rgba(148, 163, 184, 0.78); }
     width: 42px;
     height: 42px;
     font-size: 1.1rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
-
-  .motion-card,
-  .motion-card:hover,
-  .motion-card-subtle,
-  .motion-card-subtle:hover,
-  .motion-cta,
-  .motion-cta:hover,
-  .motion-cta:active,
-  .group:hover .motion-image,
-  .magic-cursor-dot,
-  .magic-cursor-glow,
-  .magic-cursor-sparkle,
-  .contact-col-left,
-  .contact-col-right,
-  .contact-badge {
-    transform: none !important;
-    box-shadow: none !important;
-    animation: none !important;
-  }
-  
-  .magic-cursor-sparkle,
-  .magic-cursor-dot,
-  .magic-cursor-glow,
-  .contact-form-glow-ring {
-    display: none !important;
-  }
-
-  .contact-heading-gradient,
-  .contact-accent-bar,
-  .contact-btn-gradient {
-    animation: none !important;
-  }
-}
   }
 }
 
@@ -1657,25 +1575,36 @@ html.dark .contact-input::placeholder { color: rgba(148, 163, 184, 0.78); }
   cursor: not-allowed;
   transform: none;
 }
+/* Fix: Prevent Flash of Unstyled Text (FOUT) on Dynamic Generated Text Canvas */
+@layer utilities {
+  .story-canvas-content, 
+  [class*="story-text"], 
+  [class*="generated-content"] {
+    font-display: swap;
+    animation: fontHydrationLock 0.3s ease-in-out forwards;
+  }
 
-.contact-submit-btn:not(:disabled):hover {
-  transform: translate3d(0, -2px, 0) scale(1.005);
-  box-shadow:
-    0 0 0 1px rgba(139, 92, 246, 0.35),
-    0 10px 36px rgba(99, 102, 241, 0.40),
-    0 0 56px rgba(139, 92, 246, 0.18);
+
+  @keyframes fontHydrationLock {
+    from {
+      opacity: 0.85;
+      filter: blur(0.5px);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0px);
+    }
+  }
+}
+/* Hide browser-native password reveal button (Edge/IE/Chrome/Safari) */
+input::-ms-reveal,
+input::-ms-clear {
+  display: none !important;
 }
 
-.contact-submit-btn:not(:disabled):hover .contact-btn-gradient {
-  filter: brightness(1.1);
-}
-
-.contact-submit-btn:not(:disabled):active {
-  transform: translate3d(0, 0, 0) scale(0.98);
-}
-
-.contact-submit-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  transform: none;
+input::-webkit-contacts-auto-fill-button,
+input::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+  display: none !important;
+  pointer-events: none;
 }
