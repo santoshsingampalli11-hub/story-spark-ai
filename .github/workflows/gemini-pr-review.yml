@@ -28,6 +28,10 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "GEMINI_API_KEY is not configured; skipping Gemini PR review."
+            exit 0
+          fi
           python .github/scripts/gemini_pr_review.py
 
       - name: Commit and push auto-fixes
