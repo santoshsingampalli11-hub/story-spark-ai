@@ -84,7 +84,66 @@ const modules = [
     path: "/bookmarks",
     router: BookmarkRouter,
   },
-
+  {
+    path: "/payment",
+    router: paymentRouter,
+  },
+  {
+    path: "/story",
+    router: StoryVersionRouter,
+  },
+  {
+    path: "/analytics",
+    router: AnalyticsRouter,
+  },
+  {
+    path: "/stories",
+    router: StoriesRouter,
+  },
+  {
+    path: "/story-continuation",
+    router: storyRoutes,
+  },
+  {
+    path: "/story-inspiration",
+    router: StoryInspirationRouter,
+  },
+  {
+    path: "/engagement",
+    router: EngagementRouter,
+  },
+  {
+    path: "/contact",
+    router: ContactRoutes,
+  },
+  {
+    path: "/reports",
+    router: ReportRouter,
+  },
+  {
+    path: "/bug-reports",
+    router: BugReportRouter,
+  },
+  {
+    path: "/recommendations",
+    router: RecommendationRouter,
+  },
+  {
+    path: "/writer-applications",
+    router: WriterApplicationRoutes,
+  },
+  {
+    path: "/ai-editor",
+    router: AIEditorRouter,
+  },
+  {
+    path: "/chat",
+    router: ChatRouter,
+  },
+  {
+    path: "/story-visualizer",
+    router: StoryVisualizerRouter,
+  },
   {
     path: "/story-consistency",
     router: StoryConsistencyRouter,
