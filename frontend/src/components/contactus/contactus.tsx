@@ -770,82 +770,79 @@ export default function Contact() {
 
         <motion.div className="grid items-start gap-10 lg:grid-cols-[1fr_1.1fr] lg:gap-12 xl:gap-16 w-full box-border">
 
-          {/* LEFT COLUMN */}
-          <div
-            className={`contact-col-left flex flex-col transition-all duration-700 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-            }`}
-          {/* ΓöÇΓöÇ LEFT COLUMN ΓöÇΓöÇ */}
-          <div
-            className={`contact-col-left flex flex-col transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-              }`}
-          >
-            {/* Desktop badge */}
-            <span className="contact-badge mb-6 hidden w-fit items-center gap-1.5 rounded-full border border-blue-500/25 bg-blue-500/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-widest text-blue-300 lg:inline-flex">
-              <Zap className="h-3 w-3" aria-hidden="true" />
-              Get in Touch
-            </span>
+          {/* --- LEFT COLUMN --- */}
+<div
+  className={`contact-col-left flex flex-col transition-all duration-700 ${
+    isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+  }`}
+>
+  {/* Desktop Badge */}
+  <span className="contact-badge mb-6 hidden w-fit items-center gap-1.5 rounded-full border border-blue-500/25 bg-blue-500/10 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-widest text-blue-600 dark:text-blue-300 lg:inline-flex">
+    <Zap className="h-3 w-3" aria-hidden="true" />
+    Get in Touch
+  </span>
 
-            <h1
-              id="contact-heading"
-              className="font-extrabold tracking-tight text-slate-900 dark:text-white text-3xl sm:text-5xl lg:text-6xl leading-tight"
-            >
-              Let's Start a <br />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400">
-                Conversation
-              </span>
-            </h1>
+  {/* Main Dynamic Heading */}
+  <h1
+    id="contact-heading"
+    className="font-extrabold tracking-tight text-slate-900 dark:text-white text-3xl sm:text-5xl lg:text-6xl leading-tight"
+  >
+    Let's Start a <br />
+    <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400">
+      Conversation
+    </span>
+  </h1>
 
-            <div aria-hidden="true" className="h-[2px] w-12 bg-gradient-to-r from-blue-600 to-indigo-600 mt-5 rounded-full select-none" />
+  <div aria-hidden="true" className="h-[2px] w-12 bg-gradient-to-r from-blue-600 to-indigo-600 mt-5 rounded-full select-none" />
 
-            {/* Intro description — improved */}
-            <p className="mt-6 max-w-[42ch] text-[0.9375rem] leading-[1.8] text-slate-400 sm:text-base">
-              I'm always open to discussing new ideas, collaborations, freelance
-              work, or creative projects. Have a story idea or feature suggestion?
-              Drop me a message — I read everything and reply within 24 hours.
-            </p>
+  {/* Description Text */}
+  <p className="mt-6 max-w-[42ch] text-[0.9375rem] leading-[1.8] text-slate-600 dark:text-slate-400 sm:text-base">
+    I'm always open to discussing new ideas, collaborations, freelance
+    work, or creative projects. Have a story idea or feature suggestion?
+    Drop me a message — I read everything and reply within 24 hours.
+  </p>
 
-            {/* Stats row */}
-            <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-4">
-              {STATS.map(({ value, label }, i) => (
-                <div
-                  key={label}
-                  className="contact-stat-card rounded-2xl border border-white/[0.07] bg-white/[0.03] p-3 text-center sm:p-4"
-                  style={{
-                    transitionDelay: isVisible ? `${i * 80}ms` : "0ms",
-                  }}
-                >
-                  <p className="text-lg font-black text-white sm:text-xl">{value}</p>
-                  <p className="mt-0.5 text-[0.65rem] font-medium uppercase tracking-wider text-slate-500 sm:text-xs">
-                    {label}
-                  </p>
-                </div>
-              ))}
-            </div>
+  {/* Dynamic Stats Row */}
+  <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-4 select-none w-full box-border">
+    {STATS.map(({ value, label }, i) => (
+      <div
+        key={label}
+        className="rounded-xl sm:rounded-2xl border border-slate-200/80 bg-white dark:border-white/5 dark:bg-[#111827]/40 p-3 text-center sm:p-4 shadow-sm"
+      >
+        {/* Changed text-white to text-slate-900 dark:text-slate-100 */}
+        <p className="text-base sm:text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
+          {value}
+        </p>
+        <p className="mt-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          {label}
+        </p>
+      </div>
+    ))}
+  </div>
 
-            {/* Info cards grid */}
-            <div className="mt-7 grid grid-cols-2 gap-2.5 sm:mt-8 sm:gap-3">
-              {INFO_CARDS.map(({ icon: Icon, label, value, color, iconColor }) => (
-                <div
-                  key={label}
-                  className="contact-info-card flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] px-3.5 py-3 backdrop-blur-sm"
-                >
-                  <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${color} ${iconColor}`}
-                  >
-                    <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-[0.6rem] font-bold uppercase tracking-widest text-slate-500">
-                      {label}
-                    </span>
-                    <span className="block truncate text-xs font-semibold text-slate-300">
-                      {value}
-                    </span>
-                  </span>
-                </div>
-              ))}
-            </div>
+  {/* Info Cards Grid */}
+  <div className="mt-7 grid grid-cols-2 gap-2.5 sm:mt-8 sm:gap-3">
+    {INFO_CARDS.map(({ icon: Icon, label, value, color, iconColor }) => (
+      <div
+        key={label}
+        className="contact-info-card flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-white/[0.07] bg-white dark:bg-white/[0.03] px-3.5 py-3 backdrop-blur-sm shadow-sm"
+      >
+        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${color} ${iconColor}`}>
+          <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-[0.6.5rem] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+            {label}
+          </span>
+          {/* Changed text-slate-300 to text-slate-700 dark:text-slate-300 */}
+          <span className="block truncate text-xs font-semibold text-slate-700 dark:text-slate-300">
+            {value}
+          </span>
+        </span>
+      </div>
+    ))}
+  </div>
+</div>
 
             {/* Contact channels */}
             <ul className="mt-5 space-y-2.5 sm:mt-6" aria-label="Contact channels">
@@ -1181,11 +1178,11 @@ export default function Contact() {
           className="relative w-full max-w-full space-y-6 overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.05] p-7 backdrop-blur-2xl transition-all duration-300 hover:border-purple-500/30 sm:p-10"
         >
   {/* NAME */}
-  <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-[#0b1120]/80 px-5 py-3 transition-all duration-300 hover:border-purple-400/40 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20">
-  <User className="h-5 w-5 flex-shrink-0 text-purple-300" />
+  <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-3 transition-all duration-300 hover:border-purple-400/40 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20 dark:border-white/10 dark:bg-[#0b1120]/80">
+  <User className="h-5 w-5 flex-shrink-0 text-purple-600 dark:text-purple-300" />
 
   <div className="flex flex-col flex-1 min-w-0">
-    <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-300">
+    <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300">
       Full Name
     </label>
 
@@ -1196,71 +1193,71 @@ export default function Contact() {
       onChange={changeHandler}
       placeholder="John Doe"
       required
-      className="w-full min-w-0 max-w-full bg-transparent border-none p-0 text-base text-white placeholder:text-slate-400 outline-none focus:ring-0"
+      className="w-full min-w-0 max-w-full bg-transparent border-none p-0 text-base text-slate-900 placeholder:text-slate-400 outline-none focus:ring-0 dark:text-white"
     />
   </div>
 </div>
 
   {/* EMAIL */}
-  <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-[#0b1120]/80 px-5 py-3 transition-all duration-300 hover:border-blue-400/40 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20">
-    <Mail className="h-5 w-5 flex-shrink-0 text-blue-300" />
-    <div className="flex flex-col flex-1 min-w-0">
-      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1 block">
-        Email Address
-      </label>
-     <input
-  type="email"
-  name="email"
-  value={formData.email}
-  onChange={changeHandler}
-  placeholder="john@example.com"
-  required
-  className="w-full min-w-0 max-w-full bg-transparent border-none p-0 text-base text-white placeholder:text-slate-400 outline-none focus:ring-0"
-/>
-    </div>
+  <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-3 transition-all duration-300 hover:border-blue-400/40 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 dark:border-white/10 dark:bg-[#0b1120]/80">
+  <Mail className="h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-300" />
+  <div className="flex flex-col flex-1 min-w-0">
+    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1 block">
+      Email Address
+    </label>
+    <input
+      type="email"
+      name="email"
+      value={formData.email}
+      onChange={changeHandler}
+      placeholder="john@example.com"
+      required
+      className="w-full min-w-0 max-w-full bg-transparent border-none p-0 text-base text-slate-900 placeholder:text-slate-400 outline-none focus:ring-0 dark:text-white"
+    />
   </div>
+</div>
 
   {/* SUBJECT */}
-  <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-[#0b1120]/80 px-5 py-3 transition-all duration-300 hover:border-pink-400/40 focus-within:border-pink-500 focus-within:ring-2 focus-within:ring-pink-500/20">
-    <FileText className="h-5 w-5 flex-shrink-0 text-pink-300" />
-    <div className="flex flex-col flex-1 min-w-0">
-      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-1 block">
-        Subject
-      </label>
-      <input
-  type="text"
-  name="subject"
-  value={formData.subject}
-  onChange={changeHandler}
-  placeholder="Project Collaboration"
-  required
-  className="w-full min-w-0 bg-transparent border-none p-0 text-base text-white outline-none focus:ring-0"
-/>
-    </div>
+  <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-3 transition-all duration-300 hover:border-pink-400/40 focus-within:border-pink-500 focus-within:ring-2 focus-within:ring-pink-500/20 dark:border-white/10 dark:bg-[#0b1120]/80">
+  <FileText className="h-5 w-5 flex-shrink-0 text-pink-600 dark:text-pink-300" />
+  <div className="flex flex-col flex-1 min-w-0">
+    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-1 block">
+      Subject
+    </label>
+    <input
+      type="text"
+      name="subject"
+      value={formData.subject}
+      onChange={changeHandler}
+      placeholder="Project Collaboration"
+      required
+      className="w-full min-w-0 bg-transparent border-none p-0 text-base text-slate-900 placeholder:text-slate-400 outline-none focus:ring-0 dark:text-white"
+    />
   </div>
+</div>
 
   {/* MESSAGE */}
-  <div className="flex items-start gap-4 rounded-2xl border border-white/10 bg-[#0b1120]/80 px-5 py-4 transition-all duration-300 hover:border-purple-400/40 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20">
-    <Pencil className="mt-1 h-5 w-5 flex-shrink-0 text-purple-300" />
-    <div className="flex flex-col flex-1 min-w-0">
-      <label className="text-[10px] font-bold uppercase tracking-wider text-slate-300 mb-2 block">
-        Message
-      </label>
-      <textarea
-  rows={6}
-  name="message"
-  value={formData.message}
-  onChange={changeHandler}
-  placeholder="Tell us about your idea..."
-  maxLength={500}
-  required
-  className="w-full min-w-0 max-w-full resize-none bg-transparent border-none p-0 text-base text-white placeholder:text-slate-400 outline-none focus:ring-0"
-/>
-<div className="mt-2 text-right text-xs text-slate-400">
-  {formData.message.length}/500
-</div>
+ <div className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 transition-all duration-300 hover:border-purple-400/40 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-500/20 dark:border-white/10 dark:bg-[#0b1120]/80">
+  <Pencil className="mt-1 h-5 w-5 flex-shrink-0 text-purple-600 dark:text-purple-300" />
+  <div className="flex flex-col flex-1 min-w-0">
+    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-300 mb-2 block">
+      Message
+    </label>
+    <textarea
+      rows={6}
+      name="message"
+      value={formData.message}
+      onChange={changeHandler}
+      placeholder="Tell us about your idea..."
+      maxLength={500}
+      required
+      className="w-full min-w-0 max-w-full resize-none bg-transparent border-none p-0 text-base text-slate-900 placeholder:text-slate-400 outline-none focus:ring-0 dark:text-white"
+    />
+    <div className="mt-2 text-right text-xs text-slate-400 dark:text-slate-500">
+      {formData.message.length}/500
     </div>
   </div>
+</div>
 
                 <button
                   type="submit"
