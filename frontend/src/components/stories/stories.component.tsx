@@ -11,6 +11,12 @@ import logo from "../../assets/logoNew.png";
 import StoryGeneratingAnimation from "../loading/story-generating-animation.component";
 import { useDebounce } from "../../hooks/useDebounce";
 import ConfirmDialog from "./ConfirmDialog";
+import {
+  clearStoryDraft,
+  loadStoryDraft,
+  saveStoryDraft,
+  type StoryDraftData,
+} from "../../utils/story-draft";
 
 const soundtrackMap: Record<string, string> = {
   "🧙 Fantasy": "/audio/fantasy.mp3",
@@ -28,7 +34,6 @@ type Inputs = {
 };
 
 const MAX_PROMPT_LENGTH = 2000;
-const WARN_THRESHOLD = 0.85;
 const lengths = ["short", "medium", "long"] as const;
 const WARN_THRESHOLD = 0.8;
 const DANGER_THRESHOLD = 0.95;
@@ -537,6 +542,8 @@ const StoriesComponent = () => {
 
     wordCursor += wordsInSentence;
   });
+
+  return segments;
 };
 
 interface ICharacter {
@@ -545,9 +552,6 @@ interface ICharacter {
   role: string;
   personality: string;
 }
-
-  return segments;
-};
 
 const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
   stories,
@@ -575,8 +579,11 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchFilter, setSearchFilter] = useState<string>("all");
 
+  const savedDraft = loadStoryDraft();
+  const [showRestorePrompt, setShowRestorePrompt] = useState<boolean>(() => Boolean(savedDraft));
   const [selectedPrompt, setSelectedPrompt] = useState<string>("");
   const [showHelpModal, setShowHelpModal] = useState(false);
+
   const [selectedGenre, setSelectedGenre] = useState<string>(
 
     draft?.genre
@@ -590,9 +597,11 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
     return location.state?.prompt || draft?.prompt || "";
   });
 
+
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>(draft?.language || "English");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("English");
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState<boolean>(false);
+
 
 
 
@@ -611,9 +620,16 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      audioRef.current.src = soundtrack;
+      audioRef.current.play().catch(() => {
+        /* ignore autoplay restrictions */
+      });
+    }
+  }, []);
+
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [showWorldMap, setShowWorldMap] = useState<boolean>(false);
-const [, setShowRemix] = useState<boolean>(false);
+  const [, setShowRemix] = useState<boolean>(false);
   const [createPost] = useCreatePostMutation();
   const [deletePost] = useDeletePostMutation();
   const { data: profile } = useGetProfileInfoQuery(undefined, { skip: !isLogin });
@@ -744,20 +760,28 @@ const [, setShowRemix] = useState<boolean>(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
   const [isPausedAudio, setIsPausedAudio] = useState<boolean>(false);
 
-  // Autosave Draft
+  // Draft restore + autosave
   useEffect(() => {
+    if (!textareaValue.trim()) {
+      return;
+    }
+
     const timer = setTimeout(() => {
-      const draftData = {
+      const draftData: StoryDraftData = {
         prompt: textareaValue,
         genre: selectedGenre,
         length: selectedLength,
         language: selectedLanguage,
         tone: selectedTone,
+        savedAt: new Date().toISOString(),
       };
+
       try {
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(draftData));
+        saveStoryDraft(draftData);
+        setDraftStatus(`Draft saved ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`);
       } catch (err) {
         if (err instanceof DOMException && err.name === "QuotaExceededError") {
+
           toast.error("Couldn't autosave draft â€” storage limit reached.");
         }
 
@@ -765,6 +789,7 @@ const [, setShowRemix] = useState<boolean>(false);
     }, 1000);
     return () => clearTimeout(timer);
   }, [textareaValue, selectedGenre, selectedLength, selectedLanguage, selectedTone]);
+
 
 
     if (!("speechSynthesis" in window)) {
@@ -854,6 +879,8 @@ const [, setShowRemix] = useState<boolean>(false);
   useEffect(() => {
     setValue("prompt", debouncedPrompt);
   }, [debouncedPrompt, setValue]);
+
+  useEffect(() => {
     setNarrationWordIndex(0);
     setNarrationState("idle");
   }, [selectedStory?.uuid]);
@@ -938,6 +965,7 @@ const [, setShowRemix] = useState<boolean>(false);
   };
   const handleAddTopic = () => {
     const title = newTopicTitle.trim();
+  };
 
   const [generateModel] = useGenerateModelMutation();
   const [generateFreeModel] = useGenerateFreeModelMutation();
@@ -1077,7 +1105,9 @@ const [, setShowRemix] = useState<boolean>(false);
         setValue("prompt", "");
         // Clear draft after successful generation
 
+
         localStorage.removeItem("story_spark_draft");
+
 
         if (selectedGenre) {
           playSoundtrack(selectedGenre);
@@ -1812,12 +1842,18 @@ onKeyDown={(e) => {
                         ) : null}
                       </div>
 
-                      <span className={`text-[11px] font-bold tabular-nums shrink-0 ml-auto ${
-                        isOverLimit || isDangerLimit ? "text-red-500 dark:text-red-400" : isNearLimit ? "text-amber-500" : "text-slate-400"
-                      }`}>
-                        {textareaValue.length} / {MAX_PROMPT_LENGTH}
-
-                      </span>
+                      <span
+  aria-live="polite"
+  className={`text-[11px] font-bold tabular-nums shrink-0 ml-auto ${
+    isOverLimit || isDangerLimit
+      ? "text-red-500 dark:text-red-400"
+      : isNearLimit
+      ? "text-amber-500"
+      : "text-slate-400"
+  }`}
+>
+  {textareaValue.length} / {MAX_PROMPT_LENGTH}
+</span>
                     </div>
                   </div>
 
