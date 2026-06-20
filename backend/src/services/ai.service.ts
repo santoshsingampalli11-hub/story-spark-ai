@@ -47,6 +47,52 @@ export const GEMINI_MODEL = "gemini-2.5-flash";
 export const CLAUDE_MODEL = "claude-3-5-sonnet-20241022";
 export const OPENAI_MODEL = "gpt-4o-mini"; 
 
+// ─── Circuit Breaker ─────────────────────────────────────────────────────────
+
+interface CircuitBreakerState {
+  failures: number;
+  lastFailureTime: number;
+}
+
+const CIRCUIT_BREAKER_CONFIG = {
+  maxFailures: 3,
+  cooldownMs: 60 * 1000, // 1 minute
+};
+
+const circuitBreakers: Record<string, CircuitBreakerState> = {
+  openai: { failures: 0, lastFailureTime: 0 },
+  anthropic: { failures: 0, lastFailureTime: 0 },
+  gemini: { failures: 0, lastFailureTime: 0 },
+};
+
+class CircuitBreakerError extends Error {
+  constructor(provider: string, remainingSeconds: number) {
+    super(`Circuit breaker open for ${provider}. Please try again in ${remainingSeconds}s.`);
+    this.name = "CircuitBreakerError";
+  }
+}
+
+function checkCircuitBreaker(provider: "openai" | "anthropic" | "gemini"): void {
+  const state = circuitBreakers[provider];
+  if (state.failures >= CIRCUIT_BREAKER_CONFIG.maxFailures) {
+    const timeSinceLastFailure = Date.now() - state.lastFailureTime;
+    if (timeSinceLastFailure < CIRCUIT_BREAKER_CONFIG.cooldownMs) {
+      const remainingSeconds = Math.ceil((CIRCUIT_BREAKER_CONFIG.cooldownMs - timeSinceLastFailure) / 1000);
+      throw new CircuitBreakerError(provider, remainingSeconds);
+    }
+  }
+}
+
+function recordSuccess(provider: "openai" | "anthropic" | "gemini"): void {
+  circuitBreakers[provider].failures = 0;
+  circuitBreakers[provider].lastFailureTime = 0;
+}
+
+function recordFailure(provider: "openai" | "anthropic" | "gemini"): void {
+  circuitBreakers[provider].failures++;
+  circuitBreakers[provider].lastFailureTime = Date.now();
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface AIResponse {
@@ -92,7 +138,7 @@ async function generateWithAnthropic(systemPrompt: string, userPrompt: string): 
   );
 
   const textBlock = response.content.find((block) => block.type === "text");
-  const text = textBlock && "text" in textBlock ? textBlock.text : "";
+  const text = textBlock?.type === "text" ? textBlock.text : "";
   if (!text) throw new Error("Anthropic returned an empty response");
   return text;
 }
@@ -161,8 +207,10 @@ export async function generateStory(
   if (chosenProvider === "anthropic" || chosenProvider === "claude") {
     // ── Try Anthropic first ──────────────────────────────────────────────────
     try {
+      checkCircuitBreaker("anthropic");
       let story = await generateWithAnthropic(systemPrompt, userPrompt);
       story = validateOutput(story); // Security layer: validate output
+      recordSuccess("anthropic");
       console.log("[AI] Story generated successfully via Anthropic");
       return { story, provider: "anthropic", fallbackUsed: false };
     } catch (anthropicError) {
@@ -171,7 +219,12 @@ export async function generateStory(
         anthropicError instanceof Error ? anthropicError.message : anthropicError
       );
 
-      if (!isRetryableError(anthropicError)) {
+      const isCircuitOpen = anthropicError instanceof CircuitBreakerError;
+      if (!isCircuitOpen) {
+        recordFailure("anthropic");
+      }
+
+      if (!isCircuitOpen && !isRetryableError(anthropicError)) {
         throw new Error(
           "Anthropic request failed with a non-retryable error. Please check your API key."
         );
@@ -182,8 +235,10 @@ export async function generateStory(
   } else if (chosenProvider === "openai" || !chosenProvider) {
     // ── Try OpenAI first ──────────────────────────────────────────────────────
     try {
+      checkCircuitBreaker("openai");
       let story = await generateWithOpenAI(systemPrompt, userPrompt);
       story = validateOutput(story); // Security layer: validate output
+      recordSuccess("openai");
       console.log("[AI] Story generated successfully via OpenAI");
 
       return { story, provider: "openai", fallbackUsed: false };
@@ -194,8 +249,13 @@ export async function generateStory(
         openAIError instanceof Error ? openAIError.message : openAIError
       );
 
+      const isCircuitOpen = openAIError instanceof CircuitBreakerError;
+      if (!isCircuitOpen) {
+        recordFailure("openai");
+      }
+
       // Only fall back if the error type warrants it
-      if (!isRetryableError(openAIError)) {
+      if (!isCircuitOpen && !isRetryableError(openAIError)) {
         throw new Error(
           "OpenAI request failed with a non-retryable error. Please check your API key."
         );
@@ -213,8 +273,10 @@ export async function generateStory(
 
   // ── Try Gemini as fallback / direct ───────────────────────────────────────
   try {
+    checkCircuitBreaker("gemini");
     let story = await generateWithGemini(systemPrompt, userPrompt);
     story = validateOutput(story); // Security layer: validate output
+    recordSuccess("gemini");
     console.log(`[AI] Story generated successfully via Gemini (${didFallbackToGemini ? "fallback" : "direct"})`);
 
     return { story, provider: "gemini", fallbackUsed: didFallbackToGemini };
@@ -224,6 +286,15 @@ export async function generateStory(
       "[AI] Gemini also failed.",
       geminiError instanceof Error ? geminiError.message : geminiError
     );
+
+    const isCircuitOpen = geminiError instanceof CircuitBreakerError;
+    if (!isCircuitOpen) {
+      recordFailure("gemini");
+    }
+
+    if (isCircuitOpen) {
+      throw new Error(`Story generation failed. ${geminiError instanceof Error ? geminiError.message : ""}`);
+    }
 
     // All failed — throw a clean user-facing error
     throw new Error(
