@@ -4,14 +4,7 @@ import sendResponse from "../shared/send_response";
 import { storyQueue } from "../services/storyRequestQueue";
 import { compressContext, serializeLore } from "../utils/contextCompressor";
 
-const sanitizeJsonText = (rawText: string): string => {
-  const trimmed = rawText.trim();
-  if (!trimmed.startsWith("```")) return trimmed;
-  return trimmed
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```$/, "")
-    .trim();
-};
+import { sanitizeJsonText } from "../app/modules/ai_model/ai_model.utils";
 
 const parseRawStoryText = (text: string) => ({
   storySegment: text || "The story continues into the unknown...",

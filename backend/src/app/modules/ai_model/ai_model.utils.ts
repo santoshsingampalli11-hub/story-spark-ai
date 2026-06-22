@@ -25,6 +25,18 @@ import {
   TranslationResponseSchema,
   StoryboardResponseSchema,
 } from "../ai";
+/**
+ * Strips Markdown code-fence wrappers (e.g. ```json ... ```) from AI responses
+ * so the remaining text can be safely parsed as JSON.
+ */
+export const sanitizeJsonText = (rawText: string): string => {
+  const trimmed = rawText.trim();
+  if (!trimmed.startsWith("```")) return trimmed;
+  return trimmed
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "")
+    .trim();
+};
 
 const geminiApiKey = config.gemini_api_key?.trim() ?? "";
 const genAI = new GoogleGenerativeAI(geminiApiKey);
@@ -751,7 +763,7 @@ Rules:
           "Invalid AI response: Storyboard scenes are malformed.",
         );
       }
-    );
+    
 
       return {
         sceneNumber: index + 1,
