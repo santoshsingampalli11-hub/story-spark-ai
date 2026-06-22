@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from "react";
 import CharacterProfileCard from "./CharacterProfileCard";
 import StoryGenreTransformation from "./StoryGenreTransformation";
 import StoryMoodDashboard from "./StoryMoodDashboard";
@@ -12,6 +11,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { useCreatePostMutation } from "../../redux/apis/post.api";
 import jsPDF from "jspdf";
 import StoryTranslator from "../translate/StoryTranslator";
+import StoryEndingGenerator from "./StoryEndingGenerator";
 
 export interface IStories {
   uuid: string;
@@ -48,6 +48,7 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
   const [showTranslator, setShowTranslator] = useState<boolean>(false);
   const [createPost] = useCreatePostMutation();
   const [showGenreTransformation, setShowGenreTransformation] = useState<boolean>(false);
+  const [showEndingGenerator, setShowEndingGenerator] = useState(false);
 
   useEffect(() => {
     setSelectTopics(topics.filter((topic) => topic.selected));
