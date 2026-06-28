@@ -16,6 +16,8 @@ router.post("/generate-model", apiRateLimiter, auth(), storyGenerationRateLimite
 
 router.post("/generate-free-model", apiRateLimiter, validateRequest(AIModelValidator.aiModel), freeAiRateLimiter, AiModelController.aiFreeModelGenerate);
 
+router.post("/generate-character-profile", apiRateLimiter, auth(), validateRequest(AIModelValidator.generateCharacterProfile), AiModelController.generateCharacterProfile);
+
 // Generate Model Stream - PROTECTED
 router.post(
   "/generate-model-stream",

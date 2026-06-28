@@ -60,3 +60,13 @@ export interface IChatPayload {
   message: string;
   history?: IChatMessage[];
 }
+
+export interface ICharacterProfile {
+  name: string;
+  role: string;
+  personality: string;
+  strengths: string[];
+  weaknesses: string[];
+  relationships: string;
+}
+

@@ -20,6 +20,7 @@ import {
   generateStoryContinuationMultipleWithGemini,
   translateStoryWithGemini,
   chatWithGemini,
+  generateCharacterProfilesWithGemini,
 } from "./ai_model.utils";
 import { assertSuccessfulGeneration } from "./quota.lifecycle";
 
@@ -303,30 +304,13 @@ const aiFreeModelChat = async (payload: IChatPayload, signal?: AbortSignal) => {
   }
 };
 
-const generateCharacterProfile = async (story: string) => {
+const generateCharacterProfile = async (story: string, signal?: AbortSignal) => {
   try {
-    const characterPrompt = `
-Analyze the following story and extract all important characters.
-
-For each character provide:
-- name
-- role
-- personality
-- strengths
-- weaknesses
-- relationships
-
-Return the response only in JSON array format.
-
-Story:
-${story}
-`;
-
     const result = await raceGenerationWithTimeout(
-      (signal) => generateWithGeminiStories(characterPrompt, 300, 1, "English", signal),
-      30000,
+      (s) => generateCharacterProfilesWithGemini(story, s),
+      AUTHENTICATED_GENERATION_TIMEOUT_MS,
+      signal
     );
-
     return result;
   } catch (error) {
     if (error instanceof GenerationTimeoutError || error instanceof ApiError) throw error;

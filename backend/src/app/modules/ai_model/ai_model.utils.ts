@@ -8,7 +8,7 @@ import { generateStoryboardImage } from "../../../utils/storyboard_image_generat
 import { GenerationAbortedError } from "../../../utils/generation_timeout";
 import config from "../../../config";
 import { v4 as uuidv4 } from "uuid";
-import { IAlternateEnding, ICharacter } from "./ai_model.interface";
+import { IAlternateEnding, ICharacter, ICharacterProfile } from "./ai_model.interface";
 import ApiError from "../../../errors/api_error";
 import httpStatus from "http-status";
 import type {
@@ -24,6 +24,7 @@ import {
   ContinuationResponseSchema,
   TranslationResponseSchema,
   StoryboardResponseSchema,
+  CharacterProfilesArraySchema,
 } from "../ai";
 
 const geminiApiKey = config.gemini_api_key?.trim() ?? "";
@@ -896,6 +897,69 @@ Return only valid JSON with this exact structure:
     throw new ApiError(
       httpStatus.BAD_GATEWAY,
       `AI story continuation generation failed: ${errorMsg}`,
+    );
+  }
+}
+
+export async function generateCharacterProfilesWithGemini(
+  storyContent: string,
+  signal?: AbortSignal,
+): Promise<ICharacterProfile[]> {
+  throwIfAborted(signal);
+  assertGeminiApiKeyConfigured();
+
+  try {
+    const response = await executeWithRetryAndFallback(async (activeModel) => {
+      return activeModel.generateContent({
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `Analyze the following story and extract all important characters.
+                
+                For each character, identify:
+                1. "name": The character's name.
+                2. "role": The character's role in the story (e.g. Protagonist, Antagonist, Supporting character).
+                3. "personality": A brief description of their personality.
+                4. "strengths": An array of their key strengths.
+                5. "weaknesses": An array of their key weaknesses.
+                6. "relationships": A brief summary of their connection to other characters in the story.
+                
+                Story:
+                ${storyContent}
+                
+                Return the response strictly in a JSON array format matching the specifications above. Do not include markdown code block formats (e.g., do not wrap in \`\`\`json). Just return the raw JSON output.`,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          ...generationConfig,
+          responseMimeType: "application/json",
+        },
+        safetySettings,
+      });
+    }, signal);
+
+    throwIfAborted(signal);
+    const text = response.response.text();
+
+    return safeParseAIResponse(
+      text,
+      CharacterProfilesArraySchema,
+      [] as ICharacterProfile[],
+      { label: "Gemini character profile extraction" }
+    );
+  } catch (error: unknown) {
+    if (error instanceof ApiError || error instanceof GenerationAbortedError) {
+      throw error;
+    }
+
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    throw new ApiError(
+      httpStatus.BAD_GATEWAY,
+      `AI character profile extraction failed: ${errorMsg}`,
     );
   }
 }

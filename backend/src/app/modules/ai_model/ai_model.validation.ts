@@ -123,6 +123,15 @@ const aiTranslate = z.object({
   }),
 });
 
+const generateCharacterProfile = z.object({
+  body: z.object({
+    story: z
+      .string({ required_error: "Story content is required!" })
+      .min(50, "Story content must be at least 50 characters long.")
+      .max(25000, "Story content must not exceed 25000 characters."),
+  }),
+});
+
 export const AIModelValidator = {
   aiModel,
   aiAlternateEndings,
@@ -130,4 +139,5 @@ export const AIModelValidator = {
   aiChat,
   aiRemix,
   aiTranslate,
-};
+  generateCharacterProfile,
+};

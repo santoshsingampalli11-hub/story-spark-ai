@@ -28,6 +28,7 @@ import StoryImprovementSuggestions from "./StoryImprovementSuggestions";
 import StoryRecommendations from "./StoryRecommendations";
 import StoryCollaboration from "./StoryCollaboration";
 import StoryVoiceNarrator from "./StoryVoiceNarrator";
+import { getToken } from "../../services/auth.service";
 
 export interface IStories {
   uuid: string;
@@ -194,13 +195,14 @@ const handleGenerateCharacterProfile = async () => {
   setProfileLoading(true);
 
   try {
-    // Replace with your backend API endpoint
+    const token = getToken();
     const response = await fetch(
-      "/api/generate-character-profile",
+      "/api/v1/ai_model/generate-character-profile",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token ? { Authorization: token.startsWith("Bearer ") ? token : `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           story: selectedStory.content,
