@@ -201,9 +201,5 @@ export function compressContext(
     window,
     totalTokens: usedTokens,
     droppedNodeCount: nodes.length - window.length,
-    fix/story-parser-locations-1035
- main
-    
- main
   };
 }
