@@ -107,3 +107,4 @@ export const validateOutput = (aiResponse: string): string => {
   assertContentSafe(aiResponse);
 
   return aiResponse;
+};
