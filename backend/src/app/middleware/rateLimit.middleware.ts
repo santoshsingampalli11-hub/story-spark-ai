@@ -15,7 +15,7 @@ export const searchRateLimiter = rateLimit({
     const forwarded = (req.headers["x-forwarded-for"] as string) ?? "";
     return forwarded.split(",")[0]?.trim() || req.ip || "unknown";
   },
-  validate: { keyGenerator: false },
+  validate: false,
 } as any);
 
 /**
@@ -32,5 +32,5 @@ export const apiRateLimiter = rateLimit({
     const forwarded = (req.headers["x-forwarded-for"] as string) ?? "";
     return forwarded.split(",")[0]?.trim() || req.ip || "unknown";
   },
-  validate: { keyGenerator: false },
+  validate: false,
 } as any);
