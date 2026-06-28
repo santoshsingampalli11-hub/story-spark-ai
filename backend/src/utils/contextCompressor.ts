@@ -62,9 +62,8 @@ export function contextCompressor(fullStory: string): ICompressedContext {
 Characters: ${Array.from(characters).join(", ")}
 Events: ${keyEvents.slice(0, 5).join(" | ")}
 Settings: ${Array.from(setting).join(" | ")}
-    `.trim()
+  };
 
- main
 import { get_encoding } from "tiktoken";
 
 export interface LorePayload {
