@@ -1,5 +1,3 @@
- fix/story-parser-locations-1035
- feat-context-compression
 export interface ICompressedContext {
   characters: string[];
   keyEvents: string[];
