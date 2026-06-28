@@ -167,7 +167,7 @@ const handleGenerateCharacterProfile = async () => {
   try {
     // Replace with your backend API endpoint
     const response = await fetch(
-      "/api/generate-character-profile",
+      "/api/v1/ai_model/generate-character-profile",
       {
         method: "POST",
         headers: {
@@ -178,6 +178,7 @@ const handleGenerateCharacterProfile = async () => {
         }),
       }
     );
+
 
     const data = await response.json();
 
@@ -248,8 +249,8 @@ if (!stories || stories.length === 0) {
       </div>
     </div>
   );
-}
-  }
+
+
 
   return (
     <div className="mt-16 px-4 sm:px-6 lg:px-8 max-w-8xl mx-auto pb-10">
@@ -407,7 +408,6 @@ if (!stories || stories.length === 0) {
                     );
                   })
                 ) : (
-                  DOMPurify.sanitize(selectedStory.content)
                   (() => {
                     const rawParts = selectedStory.content.split(/(\s+)/);
                     let wordOffset = 0;
@@ -481,6 +481,7 @@ if (!stories || stories.length === 0) {
                 >
                   <i className="fa-solid fa-rotate-left"></i> Reset to Original
                 </button>
+              )}
               {selectedStory ? (
                 <p className="break-words">{selectedStory.content}</p>
               ) : (
@@ -599,5 +600,7 @@ if (!stories || stories.length === 0) {
     </div>
   );
 };
+};
 
 export default StoriesViewComponent;
+
