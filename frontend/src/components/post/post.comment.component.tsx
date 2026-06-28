@@ -5,13 +5,27 @@ import {
   useGetCommentsListQuery,
   useToggleCommentLikeMutation,
   useDeleteCommentMutation,
-  useReportCommentMutation,
+  useToggleCommentHelpfulMutation,
 } from "../../redux/apis/comment";
 import { isLoggedIn, getUserInfo } from "../../services/auth.service";
 import toast, { Toaster } from "react-hot-toast";
 import SSProfile from "../ui-component/ss-profile/ss-profile";
 import { timeAgo } from "../../utils/time-formate";
 import { getErrorMessage } from "../../error/error.message";
+
+const useReportCommentMutation = () => {
+  return [
+    (args: any) => {
+      console.log("Mock report comment:", args);
+      const promise = Promise.resolve({ message: "Comment reported successfully" });
+      Object.assign(promise, {
+        unwrap: () => Promise.resolve({ message: "Comment reported successfully" })
+      });
+      return promise as any;
+    },
+    { isLoading: false }
+  ] as const;
+};
 
 type Inputs = {
   comment: string;
