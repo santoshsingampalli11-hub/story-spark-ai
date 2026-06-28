@@ -127,4 +127,3 @@ Prompt: ${prompt}`;
 
   return text;
 };
- main
