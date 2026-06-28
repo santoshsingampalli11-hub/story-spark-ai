@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef, useMemo, useCallback, useEffect } from 'react';
+
 
 export interface SpeechVoiceOption {
   id: string;
@@ -16,6 +17,11 @@ export interface SpeechProgress {
   currentWordIndex: number;
   totalWords: number;
   percentage: number;
+}
+
+export interface WordRange {
+  start: number;
+  end: number;
 }
 
 export interface UseSpeechSynthesisResult {
@@ -164,17 +170,54 @@ export const useSpeechSynthesis = (
   const [isReady, setIsReady] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  const speak = (text: string) => {
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-    }
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.onend = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
-    setIsSpeaking(true);
-  };
+  const [isPaused, setIsPaused] = useState(false);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [rateState, setRateState] = useState<number>(1);
+  const [pitchState, setPitchState] = useState<number>(1);
+  const [volumeState, setVolumeState] = useState<number>(1);
+  const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string>("");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("");
 
-  const stop = () => {
+  const synthRef = useRef<SpeechSynthesis | null>(null);
+  const textRef = useRef(text);
+  const wordRangesRef = useRef<WordRange[]>(buildWordRanges(text));
+
+  useEffect(() => {
+    textRef.current = text;
+    wordRangesRef.current = buildWordRanges(text);
+  }, [text]);
+
+  const voices = useMemo(() => {
+    const genderFiltered = filterVoicesByGender(browserVoices, voiceGender);
+    return toVoiceOptions(genderFiltered);
+  }, [browserVoices, voiceGender]);
+
+  const languageOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const voice of voices) {
+      counts.set(voice.lang, (counts.get(voice.lang) ?? 0) + 1);
+    }
+
+    return Array.from(counts.entries())
+      .map(([lang, voiceCount]) => ({
+        lang,
+        label: getLanguageLabel(lang),
+        voiceCount,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [voices]);
+
+  const resolveBrowserVoice = useCallback(
+    (voiceId: string): SpeechSynthesisVoice | undefined => {
+      const genderFiltered = filterVoicesByGender(browserVoicesRef.current, voiceGender);
+      return genderFiltered.find((voice) => getVoiceId(voice) === voiceId);
+    },
+    [voiceGender],
+  );
+
+  const stop = useCallback(() => {
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
     setIsPaused(false);

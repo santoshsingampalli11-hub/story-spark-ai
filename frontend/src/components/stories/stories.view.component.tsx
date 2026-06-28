@@ -6,6 +6,7 @@ import {
   topicsData,
   getWordCount,
   SELECTED_TOPIC_CLASSES,
+  CharacterProfile,
 } from "./stories.utils";
 import { calculateReadingTime } from "../../utils/reading-time";
 import { formatReadingStats } from "../../utils/story-utils";
@@ -15,20 +16,16 @@ import StoryWorldMap from "./StoryWorldMap";
 import StoryMoodDashboard from "./StoryMoodDashboard";
 import StoryTitleSuggestions from "./StoryTitleSuggestions";
 import StoryVersionHistory from "./StoryVersionHistory";
-import toast, { Toaster } from "react-hot-toast";
-import { useCreatePostMutation } from "../../redux/apis/post.api";
-import jsPDF from "jspdf";
-import StoryTranslator from "./translate/StoryTranslator";
+import DOMPurify from "dompurify";
+import AudioPlayer from "../AudioPlayer";
+import StoryGeneratingAnimation from "../loading/story-generating-animation.component";
 import toast, { Toaster } from "react-hot-toast";
 import { useCreatePostMutation } from "../../redux/apis/post.api";
 import jsPDF from "jspdf";
 import StoryTranslator from "../translate/StoryTranslator";
-import StoryEndingGenerator from "./StoryEndingGenerator";
-import StoryImprovementSuggestions from "./StoryImprovementSuggestions";
 import StoryRecommendations from "./StoryRecommendations";
-import StoryCollaboration from "./StoryCollaboration";
-import StoryVoiceNarrator from "./StoryVoiceNarrator";
 import { getToken } from "../../services/auth.service";
+import StoryVoiceNarrator from "./StoryVoiceNarrator";
 
 export interface IStories {
   uuid: string;
@@ -42,16 +39,55 @@ interface IPost extends IStories {
   topic: ITopicData[];
 }
 
+interface StorySentenceSegment {
+  id: string;
+  text: string;
+  startWordIndex: number;
+  endWordIndex: number;
+}
+
+const buildSentenceSegments = (content: string): StorySentenceSegment[] => {
+  if (!content.trim()) {
+    return [];
+  }
+
+  const sentenceMatches = content.match(/[^.!?]+[.!?]*\s*/g) ?? [content];
+  const segments: StorySentenceSegment[] = [];
+  let wordCursor = 0;
+  
+  sentenceMatches.forEach((sentence, index) => {
+    const trimmedSentence = sentence.trim();
+    if (!trimmedSentence) {
+      return;
+    }
+    const wordsInSentence = trimmedSentence.split(/\s+/).length;
+    const startWordIndex = wordCursor;
+    const endWordIndex = wordCursor + wordsInSentence - 1;
+    segments.push({
+      id: `sentence-${index}`,
+      text: sentence,
+      startWordIndex,
+      endWordIndex,
+    });
+    wordCursor += wordsInSentence;
+  });
+  return segments;
+};
+
 interface StoriesComponentProps {
   stories: IStories[];
   isLogin: boolean;
   setStories: (stories: IStories[]) => void;
+  isLoading?: boolean;
+  onPublishSuccess?: () => void;
 }
 
 const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
   stories,
   isLogin,
   setStories,
+  isLoading,
+  onPublishSuccess,
 }) => {
   const [selectedStory, setSelectedStory] = useState<IStories | null>(
     stories && stories[0]
@@ -65,11 +101,16 @@ const StoriesViewComponent: React.FC<StoriesComponentProps> = ({
   const [showTranslator, setShowTranslator] = useState<boolean>(false);
   const [createPost] = useCreatePostMutation();
   const [showGenreTransformation, setShowGenreTransformation] = useState<boolean>(false);
-  const [showEndingGenerator, setShowEndingGenerator] = useState(false);
-  const [showImprovementPanel, setShowImprovementPanel] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(false);
-  const [showCollaboration, setShowCollaboration] = useState(false);
   const [showNarrator, setShowNarrator] = useState(false);
+
+  const [narrationState, setNarrationState] = useState<"idle" | "playing" | "paused">("idle");
+  const [narrationWordIndex, setNarrationWordIndex] = useState<number>(0);
+  const audioPlayerRef = useRef<any>(null);
+
+  const sentenceSegments = useMemo(() => {
+    return buildSentenceSegments(selectedStory?.content ?? "");
+  }, [selectedStory?.content]);
 
   const [showWorldMap, setShowWorldMap] = useState<boolean>(false);
 
@@ -280,7 +321,6 @@ if (!stories || stories.length === 0) {
     </div>
   );
 }
-  }
 
   return (
     <div className="mt-16 px-4 sm:px-6 lg:px-8 max-w-8xl mx-auto pb-10">
@@ -365,13 +405,7 @@ if (!stories || stories.length === 0) {
                     >
                       📄 Export PDF
                     </button>
-                    <button
-                      type="button"
-                      className="rounded-lg px-4 py-2 bg-yellow-600 text-white font-semibold hover:bg-yellow-500 transition-colors"
-                      onClick={() => setShowImprovementPanel(true)}
-                    >
-                      ✨ Improve
-                    </button>
+
                     <button
                       type="button"
                       className="rounded-lg px-4 py-2 bg-emerald-700 text-white font-semibold cursor-pointer hover:bg-emerald-600 transition-colors"
@@ -387,13 +421,7 @@ if (!stories || stories.length === 0) {
                     >
                       📚 Recommendations
                     </button>
-                    <button
-                      type="button"
-                      className="rounded-lg px-4 py-2 bg-cyan-700 text-white font-semibold cursor-pointer hover:bg-cyan-600 transition-colors"
-                      onClick={() => setShowCollaboration(!showCollaboration)}
-                    >
-                      🤝 Collaborate
-                    </button>
+
                     <button
                     type="button"
                     className="rounded-lg px-4 py-2 bg-orange-700 text-white font-semibold cursor-pointer hover:bg-orange-600 transition-colors"
@@ -401,12 +429,13 @@ if (!stories || stories.length === 0) {
                   >
                     🎧 Narrate
                   </button>
-  type="button"
-  className="rounded-lg px-4 py-2 bg-green-700 text-white font-semibold hover:bg-green-600 transition-colors"
-  onClick={() => setShowWorldMap(true)}
->
-  🗺️ World Map
-</button>
+                  <button
+                    type="button"
+                    className="rounded-lg px-4 py-2 bg-green-700 text-white font-semibold hover:bg-green-600 transition-colors"
+                    onClick={() => setShowWorldMap(true)}
+                  >
+                    🗺️ World Map
+                  </button>
 
                   </>
                 )}
@@ -474,7 +503,6 @@ if (!stories || stories.length === 0) {
                     );
                   })
                 ) : (
-                  DOMPurify.sanitize(selectedStory.content)
                   (() => {
                     const rawParts = selectedStory.content.split(/(\s+)/);
                     let wordOffset = 0;
@@ -540,14 +568,6 @@ if (!stories || stories.length === 0) {
                   Explore alternate narrative styles for your story context.
                 </p>
               </div>
-              {selectedStory.content !== originalStoryContent[selectedStory.uuid] && (
-                <button
-                  type="button"
-                  onClick={handleResetEnding}
-                  className="rounded-lg px-4 py-2 bg-red-100 dark:bg-red-950/40 hover:bg-red-200 dark:hover:bg-red-900/60 text-red-700 dark:text-red-200 border border-red-200 dark:border-red-700/50 font-semibold text-sm transition-all active:scale-95 cursor-pointer flex items-center gap-1.5"
-                >
-                  <i className="fa-solid fa-rotate-left"></i> Reset to Original
-                </button>
               {selectedStory ? (
                 <p className="break-words">{selectedStory.content}</p>
               ) : (
