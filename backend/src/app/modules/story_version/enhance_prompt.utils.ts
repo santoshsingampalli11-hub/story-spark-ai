@@ -1,4 +1,3 @@
- fix/story-parser-locations-1035
 // backend/src/app/modules/story_version/enhance_prompt.utils.ts
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -9,7 +8,6 @@ import {
   getOpenAIClient,
   getAnthropicClient,
 } from "../../../services/ai.service";
- main
 
 export const enhancePrompt = (prompt: string, context?: string): string => {
   // Use the following story context if available
