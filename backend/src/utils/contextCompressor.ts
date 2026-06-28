@@ -61,7 +61,7 @@ export function contextCompressor(fullStory: string): ICompressedContext {
     compressedText: `
 Characters: ${Array.from(characters).join(", ")}
 Events: ${keyEvents.slice(0, 5).join(" | ")}
-Settings: ${Array.from(setting).join(" | ")}
+    `.trim()
   };
 
 import { get_encoding } from "tiktoken";
