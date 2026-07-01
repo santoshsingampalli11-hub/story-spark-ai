@@ -304,12 +304,10 @@ const socialLinks = [
           <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1">
             {legalLinks.map(({ label, to }, i) => (
               <React.Fragment key={label}>
-                <Link
-                  to={to}
-                  className="hover:text-blue-300 transition-colors"
-                >
+                <Link to={to} className="hover:text-blue-300 transition-colors">
                   {label}
                 </Link>
+
                 {i < legalLinks.length - 1 && (
                   <span className="text-white/12">|</span>
                 )}
